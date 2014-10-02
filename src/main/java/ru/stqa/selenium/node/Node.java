@@ -32,10 +32,10 @@ public class Node {
     node.start();
   }
 
-  public Node(String zooKeeperConnectionString, Capabilities capabilities) {
+  public Node(String connectionString, Capabilities capabilities) {
     this.capabilities = capabilities;
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-    client = CuratorFrameworkFactory.newClient(zooKeeperConnectionString, retryPolicy);
+    client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
   }
 
   private void start() throws Exception {
@@ -45,10 +45,17 @@ public class Node {
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
     serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 1, 1, TimeUnit.SECONDS);
 
-    Thread.sleep(5000);
-    unregisterFromHub();
-
-    serviceExecutor.shutdown();
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        try {
+          unregisterFromHub();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        serviceExecutor.shutdown();
+      }
+    });
   }
 
   private void registerToHub() throws Exception {

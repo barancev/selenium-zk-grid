@@ -6,8 +6,11 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.utils.ZKPaths;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.JsonToBeanConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -17,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import static ru.stqa.selenium.common.PathUtils.*;
 
 public class NodeRegistry {
+
+  private static Logger log = LoggerFactory.getLogger(NodeRegistry.class);
 
   public static class Builder {
 
@@ -39,11 +44,13 @@ public class NodeRegistry {
       return this;
     }
 
-    public NodeRegistry start() throws Exception {
+    public NodeRegistry create() throws Exception {
+      log.debug("Creating NodeRegistry");
       NodeRegistry registry = new NodeRegistry(client);
       registry.setLostTimeout(lostTimeout);
       registry.setDeadTimeout(deadTimeout);
       registry.start();
+      log.debug("NodeRegistry created");
       return registry;
     }
   }
@@ -53,13 +60,12 @@ public class NodeRegistry {
   private long lostTimeout = 5000;
   private long deadTimeout = 10000;
 
-  private Map<String, Object> nodes = Maps.newHashMap();
+  private Map<String, Capabilities> nodes = Maps.newHashMap();
 
   private ScheduledExecutorService serviceExecutor;
 
   private NodeRegistry(CuratorFramework client) {
     this.client = client;
-    serviceExecutor = Executors.newSingleThreadScheduledExecutor();
   }
 
   private void setLostTimeout(long lostTimeout) {
@@ -72,6 +78,7 @@ public class NodeRegistry {
 
   private void start() throws Exception {
     startNodeRegistrationListener();
+    serviceExecutor = Executors.newSingleThreadScheduledExecutor();
     serviceExecutor.scheduleAtFixedRate(new NodeHeartBeatWatcher(), 0, lostTimeout / 2, TimeUnit.MILLISECONDS);
   }
 
@@ -107,14 +114,21 @@ public class NodeRegistry {
     nodesCache.getListenable().addListener(nodesListener);
   }
 
-  public void addNode(String nodeId, Object data) {
-    nodes.put(nodeId, data);
-    System.out.println("Node added " + nodeId + ": " + data);
+  public void addNode(String nodeId, Capabilities capabilities) {
+    nodes.put(nodeId, capabilities);
+    log.info("Node added " + nodeId + ": " + capabilities);
   }
 
   public void removeNode(String nodeId) {
     nodes.remove(nodeId);
-    System.out.println("Node removed " + nodeId);
+    log.info("Node removed " + nodeId);
+  }
+
+  public Slot findFreeSlot(Capabilities capabilities) {
+    for (Map.Entry<String, Capabilities> entry : nodes.entrySet()) {
+      return new Slot(entry.getKey());
+    }
+    return null;
   }
 
   private class NodeHeartBeatWatcher implements Runnable {
@@ -126,18 +140,18 @@ public class NodeRegistry {
             long timestamp = Long.parseLong(new String(client.getData().forPath(nodeHeartBeatPath(nodeId))));
             long now = System.currentTimeMillis();
             if (now - timestamp > deadTimeout) {
-              System.out.println("Node is dead " + nodeId);
+              log.info("Node is dead " + nodeId);
               client.delete().deletingChildrenIfNeeded().forPath(nodePath(nodeId, ""));
 
             } else if (now - timestamp > lostTimeout) {
-              System.out.println("Node is lost " + nodeId);
+              log.info("Node is lost " + nodeId);
 
             } else {
-              System.out.println("Node is alive " + nodeId);
+              log.debug("Node is alive " + nodeId);
             }
 
           } else {
-            System.out.println("Node has no heartbeat " + nodeId);
+            log.info("Node has no heartbeat " + nodeId);
           }
         }
       } catch (Exception e) {

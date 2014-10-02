@@ -1,15 +1,12 @@
 package ru.stqa.selenium.hub;
 
 import com.google.common.io.Files;
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.openqa.selenium.remote.BrowserType;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.stqa.selenium.common.Curator;
 
 import java.util.Properties;
 
@@ -17,6 +14,8 @@ import java.util.Properties;
  * Hello world!
  */
 public class Hub {
+
+  private static Logger log = LoggerFactory.getLogger(Hub.class);
 
   private static class SeleniumZooKeeperServer extends ZooKeeperServerMain {
     @Override
@@ -27,7 +26,7 @@ public class Hub {
 
   private SeleniumZooKeeperServer zooKeeperServer;
 
-  private CuratorFramework client;
+  private Curator curator;
 
   private NodeRegistry nodeRegistry;
 
@@ -53,12 +52,14 @@ public class Hub {
 
   private void start(Properties properties) throws Exception {
     startServer(properties);
-    startClient(properties.getProperty("clientPort"));
+    startCurator(properties.getProperty("clientPort"));
 
-    nodeRegistry = new NodeRegistry.Builder(client).withLostTimeout(5000).withDeadTimeout(10000).start();
+    nodeRegistry = new NodeRegistry.Builder(curator.getClient()).withLostTimeout(5000).withDeadTimeout(10000).create();
+    new NewSessionRequestProcessor(curator, nodeRegistry).start();
   }
 
   private void startServer(Properties properties) {
+    log.info("Starting ZooKeeper server: " + properties);
     QuorumPeerConfig quorumConfiguration = new QuorumPeerConfig();
     try {
       quorumConfiguration.parseProperties(properties);
@@ -81,15 +82,13 @@ public class Hub {
     }.start();
   }
 
-  private void startClient(String port) throws Exception {
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-    client = CuratorFrameworkFactory.newClient("localhost:" + port, retryPolicy);
-    client.start();
-    client.create().forPath("/nodes");
+  private void startCurator(String port) throws Exception {
+    curator = Curator.createCurator("localhost:" + port);
+    curator.getClient().create().forPath("/nodes");
   }
 
   private void stop() {
-    client.close();
+    curator.getClient().close();
     zooKeeperServer.shutdown();
   }
 
