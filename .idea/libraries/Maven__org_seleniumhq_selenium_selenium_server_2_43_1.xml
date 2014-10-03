@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Maven: org.seleniumhq.selenium:selenium-server:2.43.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-server/2.43.1/selenium-server-2.43.1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-server/2.43.1/selenium-server-2.43.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-server/2.43.1/selenium-server-2.43.1-sources.jar!/" />
+      <root url="file://$PROJECT_DIR$/../selenium/java/server/src" />
+    </SOURCES>
+  </library>
+</component>

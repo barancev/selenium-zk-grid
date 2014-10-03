@@ -1,16 +1,20 @@
 package ru.stqa.selenium.zkgrid.node;
 
+import com.google.common.collect.Maps;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.remote.*;
+import org.openqa.selenium.remote.server.DefaultDriverSessions;
+import org.openqa.selenium.remote.server.JsonHttpCommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 import ru.stqa.selenium.zkgrid.common.StringSerializer;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -21,12 +25,16 @@ public class Node {
   private static Logger log = LoggerFactory.getLogger(Node.class);
 
   private String nodeId = UUID.randomUUID().toString();
+  private Map<String, SlotInfo> slots = Maps.newHashMap();
+
+  private DefaultDriverSessions sessions;
 
   private final Curator curator;
 
   private ScheduledExecutorService serviceExecutor;
 
   private boolean heartBeating = true;
+  private CommandHandler commandHandler;
 
   public static void main(String[] args) throws Exception {
     Node node = new Node("localhost:4444");
@@ -38,22 +46,13 @@ public class Node {
   }
 
   private void start() throws Exception {
+    sessions = new DefaultDriverSessions();
+    commandHandler = new CommandHandler(sessions);
+
     registerToHub();
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
     serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 1, 1, TimeUnit.SECONDS);
-
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        try {
-          unregisterFromHub();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        serviceExecutor.shutdown();
-      }
-    });
   }
 
   private void registerToHub() throws Exception {
@@ -84,8 +83,6 @@ public class Node {
   }
 
   private void startCommandListener(final SlotInfo slot) throws Exception {
-//    curator.create(nodeSlotCommandPath(slot));
-
     final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotCommandPath(slot), false);
     nodeCache.start();
 
@@ -93,12 +90,11 @@ public class Node {
       @Override
       public void nodeChanged() throws Exception {
         String data = new String(nodeCache.getCurrentData().getData());
-        log.info("Command received " + data + " on " + nodeCache.getCurrentData().getPath());
-        //Command cmd = new JsonToBeanConverter().convert(Command.class, data);
+        Command cmd = new JsonToBeanConverter().convert(Command.class, data);
+        log.info("Command received " + cmd);
         log.info("Dispatched to slot " + slot);
-
-        //Response res = Responses.success(cmd.getSessionId(), new HashMap<String, Object>(){});
-        curator.setData(nodeSlotResponsePath(slot), "{}");
+        Response res = commandHandler.handleCommand(cmd);
+        curator.setData(nodeSlotResponsePath(slot), new BeanToJsonConverter().convert(res));
         curator.clearBarrier(nodeSlotPath(slot));
       }
     };

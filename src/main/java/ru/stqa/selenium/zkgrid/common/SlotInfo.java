@@ -56,4 +56,8 @@ public class SlotInfo {
     return true;
   }
 
+  @Override
+  public String toString() {
+    return "n{nodeId=" + nodeId + ", slotId=" + slotId + "}";
+  }
 }

@@ -31,8 +31,7 @@ public class Client {
   public static void main(String[] args) throws Exception {
     Client wdClient = new Client("localhost:4444");
     wdClient.startNewSession(DesiredCapabilities.firefox());
-    //client.sendCommand("test");
-    //client.quit();
+    wdClient.quit();
   }
 
   public Client(String connectionString) throws InterruptedException {
@@ -57,7 +56,7 @@ public class Client {
     log.info("Slot allocated " + slot);
 
     Response res = sendCommand(new Command(null, DriverCommand.NEW_SESSION, new HashMap<String, Object>(){{
-      put("requiredCapabilities", capabilities);
+      put("desiredCapabilities", capabilities);
     }}));
 
     sessionId = res.getSessionId();
@@ -69,7 +68,7 @@ public class Client {
 
     curator.setData(nodeSlotCommandPath(slot), new BeanToJsonConverter().convert(command));
 
-    if (! barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
+    if (! barrier.waitOnBarrier(120, TimeUnit.SECONDS)) {
       throw new Error("Command execution timeout");
     }
 
