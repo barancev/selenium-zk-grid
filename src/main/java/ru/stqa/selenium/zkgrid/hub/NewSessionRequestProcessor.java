@@ -41,11 +41,11 @@ public class NewSessionRequestProcessor {
       SlotInfo slot = nodeRegistry.findFreeMatchingSlot(capabilities);
       if (slot != null) {
         log.info("Slot found " + slot.getSlotId());
-        curator.setData(clientNewSessionIdPath(clientId), new BeanToJsonConverter().convert(slot));
+        curator.setData(clientAllocatedSlotPath(clientId), new BeanToJsonConverter().convert(slot));
         slot.setBusy(true);
       } else {
         log.info("No slot found");
-        curator.setData(clientNewSessionIdPath(clientId), "{}");
+        curator.setData(clientAllocatedSlotPath(clientId), "{}");
       }
       curator.clearBarrier(clientPath(clientId));
     }

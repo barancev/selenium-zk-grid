@@ -46,28 +46,12 @@ public class PathUtils {
     return clientPath(clientId, "");
   }
 
-  public static String clientNewSessionIdPath(String clientId) {
-    return clientPath(clientId, "/newSession");
+  public static String clientAllocatedSlotPath(String clientId) {
+    return clientPath(clientId, "/slot");
   }
 
   public static String clientPath(String clientId, String subPath) {
     return "/client/" + clientId + subPath;
-  }
-
-  public static String sessionPath(String sessionId) {
-    return sessionPath(sessionId, "");
-  }
-
-  public static String sessionRequestPath(String sessionId) {
-    return sessionPath(sessionId, "/request");
-  }
-
-  public static String sessionResponsePath(String sessionId) {
-    return sessionPath(sessionId, "/response");
-  }
-
-  public static String sessionPath(String sessionId, String subPath) {
-    return "/session/" + sessionId + subPath;
   }
 
 }

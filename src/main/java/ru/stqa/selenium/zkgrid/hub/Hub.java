@@ -60,7 +60,7 @@ public class Hub {
     startServer(properties);
     startCurator(properties.getProperty("clientPort"));
 
-    nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(5000).withDeadTimeout(10000).create();
+    nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(10000).withDeadTimeout(20000).create();
     new RegistrationRequestProcessor(curator, nodeRegistry).start();
     new NewSessionRequestProcessor(curator, nodeRegistry).start();
   }

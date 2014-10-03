@@ -52,7 +52,7 @@ public class Client {
       throw new Error("Slot allocation timeout");
     }
 
-    slot = new JsonToBeanConverter().convert(SlotInfo.class, curator.getDataForPath(clientNewSessionIdPath(clientId)));
+    slot = new JsonToBeanConverter().convert(SlotInfo.class, curator.getDataForPath(clientAllocatedSlotPath(clientId)));
     log.info("Slot allocated " + slot);
 
     Response res = sendCommand(new Command(null, DriverCommand.NEW_SESSION, new HashMap<String, Object>(){{

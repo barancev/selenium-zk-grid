@@ -7,14 +7,14 @@ public class SlotInfo {
 
   private String nodeId;
   private String slotId;
-  private DesiredCapabilities capabilities;
+  private Capabilities capabilities;
 
   private boolean busy = false;
 
   public SlotInfo() {
   }
 
-  public SlotInfo(String nodeId, String slotId, DesiredCapabilities capabilities) {
+  public SlotInfo(String nodeId, String slotId, Capabilities capabilities) {
     this.nodeId = nodeId;
     this.slotId = slotId;
     this.capabilities = capabilities;
@@ -36,11 +36,11 @@ public class SlotInfo {
     this.slotId = slotId;
   }
 
-  public DesiredCapabilities getCapabilities() {
+  public Capabilities getCapabilities() {
     return capabilities;
   }
 
-  public void setCapabilities(DesiredCapabilities capabilities) {
+  public void setCapabilities(Capabilities capabilities) {
     this.capabilities = capabilities;
   }
 
@@ -58,6 +58,6 @@ public class SlotInfo {
 
   @Override
   public String toString() {
-    return "n{nodeId=" + nodeId + ", slotId=" + slotId + "}";
+    return "{nodeId=" + nodeId + ", slotId=" + slotId + "}";
   }
 }

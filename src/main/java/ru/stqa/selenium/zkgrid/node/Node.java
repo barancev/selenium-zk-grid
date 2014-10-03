@@ -5,9 +5,9 @@ import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.*;
 import org.openqa.selenium.remote.server.DefaultDriverSessions;
-import org.openqa.selenium.remote.server.JsonHttpCommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
@@ -25,11 +25,11 @@ public class Node {
   private static Logger log = LoggerFactory.getLogger(Node.class);
 
   private String nodeId = UUID.randomUUID().toString();
-  private Map<String, SlotInfo> slots = Maps.newHashMap();
+  private Map<String, NodeSlot> slots = Maps.newHashMap();
 
   private DefaultDriverSessions sessions;
 
-  private final Curator curator;
+  private Curator curator;
 
   private ScheduledExecutorService serviceExecutor;
 
@@ -49,15 +49,11 @@ public class Node {
     sessions = new DefaultDriverSessions();
     commandHandler = new CommandHandler(sessions);
 
-    registerToHub();
+    registerNode();
+    registerSlots();
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
     serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 1, 1, TimeUnit.SECONDS);
-  }
-
-  private void registerToHub() throws Exception {
-    registerNode();
-    registerSlots();
   }
 
   private void registerNode() throws Exception {
@@ -76,14 +72,19 @@ public class Node {
 
   private void registerSlots() throws Exception {
     for (int i = 0; i < 10; i++) {
-      SlotInfo slot = new SlotInfo(nodeId, "" + i, DesiredCapabilities.firefox());
-      curator.setData(nodeSlotPath(slot), new BeanToJsonConverter().convert(slot.getCapabilities()));
+      Capabilities capabilities = DesiredCapabilities.firefox();
+      String slotId = String.valueOf(i);
+      SlotInfo slotInfo = new SlotInfo(nodeId, slotId, capabilities);
+      NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
+      slots.put(slotInfo.getSlotId(), slot);
+      curator.setData(nodeSlotPath(slotInfo), new BeanToJsonConverter().convert(capabilities));
       startCommandListener(slot);
     }
   }
 
-  private void startCommandListener(final SlotInfo slot) throws Exception {
-    final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotCommandPath(slot), false);
+  private void startCommandListener(final NodeSlot slot) throws Exception {
+    final SlotInfo slotInfo = slot.getSlotInfo();
+    final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotCommandPath(slotInfo), false);
     nodeCache.start();
 
     NodeCacheListener nodesListener = new NodeCacheListener () {
@@ -93,9 +94,7 @@ public class Node {
         Command cmd = new JsonToBeanConverter().convert(Command.class, data);
         log.info("Command received " + cmd);
         log.info("Dispatched to slot " + slot);
-        Response res = commandHandler.handleCommand(cmd);
-        curator.setData(nodeSlotResponsePath(slot), new BeanToJsonConverter().convert(res));
-        curator.clearBarrier(nodeSlotPath(slot));
+        slot.processCommand(cmd);
       }
     };
 
