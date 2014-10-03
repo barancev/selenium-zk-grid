@@ -1,4 +1,4 @@
-package ru.stqa.selenium.common;
+package ru.stqa.selenium.zkgrid.common;
 
 public class PathUtils {
 

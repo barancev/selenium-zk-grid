@@ -1,4 +1,4 @@
-package ru.stqa.selenium.common;
+package ru.stqa.selenium.zkgrid.common;
 
 import org.apache.curator.framework.recipes.queue.QueueSerializer;
 import org.openqa.selenium.remote.BeanToJsonConverter;

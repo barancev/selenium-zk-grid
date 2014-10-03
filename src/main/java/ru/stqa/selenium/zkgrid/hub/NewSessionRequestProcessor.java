@@ -1,4 +1,4 @@
-package ru.stqa.selenium.hub;
+package ru.stqa.selenium.zkgrid.hub;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
@@ -9,11 +9,11 @@ import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.BeanToJsonConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.CapabilitiesSerializer;
-import ru.stqa.selenium.common.Curator;
-import ru.stqa.selenium.common.SlotInfo;
+import ru.stqa.selenium.zkgrid.common.CapabilitiesSerializer;
+import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
-import static ru.stqa.selenium.common.PathUtils.*;
+import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
 public class NewSessionRequestProcessor {
 

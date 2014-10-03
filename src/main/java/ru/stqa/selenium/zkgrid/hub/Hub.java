@@ -1,4 +1,4 @@
-package ru.stqa.selenium.hub;
+package ru.stqa.selenium.zkgrid.hub;
 
 import com.google.common.io.Files;
 import org.apache.zookeeper.server.ServerConfig;
@@ -6,7 +6,7 @@ import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.zkgrid.common.Curator;
 
 import java.util.Properties;
 

@@ -1,4 +1,4 @@
-package ru.stqa.selenium.common;
+package ru.stqa.selenium.zkgrid.common;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;

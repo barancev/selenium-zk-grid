@@ -1,4 +1,4 @@
-package ru.stqa.selenium.hub;
+package ru.stqa.selenium.zkgrid.hub;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
@@ -7,10 +7,10 @@ import org.apache.curator.framework.recipes.queue.QueueConsumer;
 import org.apache.curator.framework.state.ConnectionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.Curator;
-import ru.stqa.selenium.common.StringSerializer;
+import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.StringSerializer;
 
-import static ru.stqa.selenium.common.PathUtils.nodePath;
+import static ru.stqa.selenium.zkgrid.common.PathUtils.nodePath;
 
 public class RegistrationRequestProcessor {
 

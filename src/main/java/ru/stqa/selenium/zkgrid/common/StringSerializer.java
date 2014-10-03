@@ -1,9 +1,6 @@
-package ru.stqa.selenium.common;
+package ru.stqa.selenium.zkgrid.common;
 
 import org.apache.curator.framework.recipes.queue.QueueSerializer;
-import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.remote.BeanToJsonConverter;
-import org.openqa.selenium.remote.JsonToBeanConverter;
 
 public class StringSerializer implements QueueSerializer<String> {
 

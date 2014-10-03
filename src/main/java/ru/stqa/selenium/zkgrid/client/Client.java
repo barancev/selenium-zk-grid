@@ -1,4 +1,4 @@
-package ru.stqa.selenium.client;
+package ru.stqa.selenium.zkgrid.client;
 
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
@@ -7,15 +7,15 @@ import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.CapabilitiesSerializer;
-import ru.stqa.selenium.common.Curator;
-import ru.stqa.selenium.common.SlotInfo;
+import ru.stqa.selenium.zkgrid.common.CapabilitiesSerializer;
+import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static ru.stqa.selenium.common.PathUtils.*;
+import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
 public class Client {
 

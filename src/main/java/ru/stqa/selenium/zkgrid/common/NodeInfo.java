@@ -1,4 +1,4 @@
-package ru.stqa.selenium.common;
+package ru.stqa.selenium.zkgrid.common;
 
 import com.google.common.collect.Maps;
 import org.openqa.selenium.remote.DesiredCapabilities;

@@ -1,4 +1,4 @@
-package ru.stqa.selenium.hub;
+package ru.stqa.selenium.zkgrid.hub;
 
 import com.google.common.collect.Maps;
 import org.apache.curator.framework.CuratorFramework;
@@ -11,16 +11,16 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.JsonToBeanConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.Curator;
-import ru.stqa.selenium.common.NodeInfo;
-import ru.stqa.selenium.common.SlotInfo;
+import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.NodeInfo;
+import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static ru.stqa.selenium.common.PathUtils.*;
+import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
 public class NodeRegistry {
 
