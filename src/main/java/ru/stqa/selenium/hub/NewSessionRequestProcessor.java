@@ -6,10 +6,12 @@ import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.apache.curator.framework.recipes.queue.QueueConsumer;
 import org.apache.curator.framework.state.ConnectionState;
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.remote.BeanToJsonConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.common.CapabilitiesSerializer;
 import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.common.SlotInfo;
 
 import static ru.stqa.selenium.common.PathUtils.*;
 
@@ -39,11 +41,11 @@ public class NewSessionRequestProcessor {
       SlotInfo slot = nodeRegistry.findFreeMatchingSlot(capabilities);
       if (slot != null) {
         log.info("Slot found " + slot.getSlotId());
-        curator.setData(clientNewSessionIdPath(clientId), slot.getSlotId());
-        slot.setBuzy(true);
+        curator.setData(clientNewSessionIdPath(clientId), new BeanToJsonConverter().convert(slot));
+        slot.setBusy(true);
       } else {
         log.info("No slot found");
-        curator.setData(clientNewSessionIdPath(clientId), "NULL");
+        curator.setData(clientNewSessionIdPath(clientId), "{}");
       }
       curator.clearBarrier(clientPath(clientId));
     }
@@ -53,4 +55,5 @@ public class NewSessionRequestProcessor {
       System.out.println("!!!" + connectionState);
     }
   }
+
 }

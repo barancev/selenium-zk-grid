@@ -1,7 +1,6 @@
-package ru.stqa.selenium.hub;
+package ru.stqa.selenium.common;
 
 import com.google.common.collect.Maps;
-import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.util.Collection;

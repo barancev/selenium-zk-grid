@@ -1,11 +1,5 @@
 package ru.stqa.selenium.common;
 
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-
 public class PathUtils {
 
   public static String nodePath(String nodeId) {
@@ -20,8 +14,28 @@ public class PathUtils {
     return nodePath(nodeId, "/slots");
   }
 
+  public static String nodeSlotPath(SlotInfo slot) {
+    return nodeSlotPath(slot, "");
+  }
+
+  public static String nodeSlotPath(SlotInfo slot, String subPath) {
+    return nodeSlotPath(slot.getNodeId(), slot.getSlotId(), subPath);
+  }
+
   public static String nodeSlotPath(String nodeId, String slotId) {
-    return nodePath(nodeId, "/slots/" + slotId);
+    return nodeSlotPath(nodeId, slotId, "");
+  }
+
+  public static String nodeSlotPath(String nodeId, String slotId, String subPath) {
+    return nodePath(nodeId, "/slots/" + slotId + subPath);
+  }
+
+  public static String nodeSlotCommandPath(SlotInfo slot) {
+    return nodeSlotPath(slot, "/command");
+  }
+
+  public static String nodeSlotResponsePath(SlotInfo slot) {
+    return nodeSlotPath(slot, "/response");
   }
 
   public static String nodePath(String nodeId, String subPath) {

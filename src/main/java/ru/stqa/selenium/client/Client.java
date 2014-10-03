@@ -4,10 +4,14 @@ import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.common.CapabilitiesSerializer;
 import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.common.SlotInfo;
 
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -15,10 +19,13 @@ import static ru.stqa.selenium.common.PathUtils.*;
 
 public class Client {
 
+  private static Logger log = LoggerFactory.getLogger(Client.class);
+
   private String clientId = UUID.randomUUID().toString();
 
   private final Curator curator;
 
+  private SlotInfo slot;
   private String sessionId;
 
   public static void main(String[] args) throws Exception {
@@ -32,7 +39,7 @@ public class Client {
     curator = Curator.createCurator(connectionString);
   }
 
-  private void startNewSession(Capabilities capabilities) throws Exception {
+  private void startNewSession(final Capabilities capabilities) throws Exception {
     DistributedBarrier barrier = curator.createBarrier(clientPath(clientId));
 
     DistributedQueue<Capabilities> queue = QueueBuilder.builder(
@@ -43,24 +50,36 @@ public class Client {
     queue.put(capabilitiesCopy);
 
     if (! barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
-      throw new Error("Session creation timeout");
+      throw new Error("Slot allocation timeout");
     }
 
-    sessionId = curator.getDataForPath(clientNewSessionIdPath(clientId));
-    System.out.println("Session created " + sessionId);
+    slot = new JsonToBeanConverter().convert(SlotInfo.class, curator.getDataForPath(clientNewSessionIdPath(clientId)));
+    log.info("Slot allocated " + slot);
+
+    Response res = sendCommand(new Command(null, DriverCommand.NEW_SESSION, new HashMap<String, Object>(){{
+      put("requiredCapabilities", capabilities);
+    }}));
+
+    sessionId = res.getSessionId();
   }
 
-  private void sendCommand(String command) throws Exception {
-//    client.create().creatingParentsIfNeeded().forPath(sessionRequestPath(sessionId), command.getBytes());
-//    String result = new String(client.getData().watched().forPath(sessionResponsePath(sessionId)));
-//    System.out.println(result);
-//    client.delete().forPath(sessionRequestPath(sessionId));
-//    client.delete().forPath(sessionResponsePath(sessionId));
+  private Response sendCommand(Command command) throws Exception {
+    log.info("Sending command " + command);
+    DistributedBarrier barrier = curator.createBarrier(nodeSlotPath(slot));
+
+    curator.setData(nodeSlotCommandPath(slot), new BeanToJsonConverter().convert(command));
+
+    if (! barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
+      throw new Error("Command execution timeout");
+    }
+
+    Response res = new JsonToBeanConverter().convert(Response.class, curator.getDataForPath(nodeSlotResponsePath(slot)));
+    log.info("Response is " + res);
+    return res;
   }
 
   private void quit() throws Exception {
-    sendCommand("quit");
-//    client.delete().forPath(sessionPath(sessionId));
+    Response res = sendCommand(new Command(new SessionId(sessionId), DriverCommand.QUIT));
   }
 
 }

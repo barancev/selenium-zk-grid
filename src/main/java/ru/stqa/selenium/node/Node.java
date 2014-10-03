@@ -1,20 +1,16 @@
 package ru.stqa.selenium.node;
 
-import com.google.common.collect.Maps;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
+import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
-import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.remote.BeanToJsonConverter;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.CapabilitiesSerializer;
 import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.common.SlotInfo;
 import ru.stqa.selenium.common.StringSerializer;
-import ru.stqa.selenium.hub.Hub;
 
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -29,7 +25,6 @@ public class Node {
   private final Curator curator;
 
   private ScheduledExecutorService serviceExecutor;
-  Map<String, ExecutorService> sessionExecutors = Maps.newHashMap();
 
   private boolean heartBeating = true;
 
@@ -81,9 +76,34 @@ public class Node {
   }
 
   private void registerSlots() throws Exception {
-    for (int i = 0; i < 2; i++) {
-      curator.setData(nodeSlotPath(nodeId, "" + i), new BeanToJsonConverter().convert(DesiredCapabilities.firefox()));
+    for (int i = 0; i < 10; i++) {
+      SlotInfo slot = new SlotInfo(nodeId, "" + i, DesiredCapabilities.firefox());
+      curator.setData(nodeSlotPath(slot), new BeanToJsonConverter().convert(slot.getCapabilities()));
+      startCommandListener(slot);
     }
+  }
+
+  private void startCommandListener(final SlotInfo slot) throws Exception {
+//    curator.create(nodeSlotCommandPath(slot));
+
+    final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotCommandPath(slot), false);
+    nodeCache.start();
+
+    NodeCacheListener nodesListener = new NodeCacheListener () {
+      @Override
+      public void nodeChanged() throws Exception {
+        String data = new String(nodeCache.getCurrentData().getData());
+        log.info("Command received " + data + " on " + nodeCache.getCurrentData().getPath());
+        //Command cmd = new JsonToBeanConverter().convert(Command.class, data);
+        log.info("Dispatched to slot " + slot);
+
+        //Response res = Responses.success(cmd.getSessionId(), new HashMap<String, Object>(){});
+        curator.setData(nodeSlotResponsePath(slot), "{}");
+        curator.clearBarrier(nodeSlotPath(slot));
+      }
+    };
+
+    nodeCache.getListenable().addListener(nodesListener);
   }
 
   private void unregisterFromHub() throws Exception {

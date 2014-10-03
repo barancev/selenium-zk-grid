@@ -12,6 +12,8 @@ import org.openqa.selenium.remote.JsonToBeanConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.common.NodeInfo;
+import ru.stqa.selenium.common.SlotInfo;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -152,7 +154,7 @@ public class NodeRegistry {
   public SlotInfo findFreeMatchingSlot(Capabilities capabilities) {
     for (NodeInfo node : nodes.values()) {
       for (SlotInfo slot : node.getSlots()) {
-        if (!slot.isBuzy() && slot.match(capabilities)) {
+        if (!slot.isBusy() && slot.match(capabilities)) {
           return slot;
         }
       }
@@ -182,6 +184,7 @@ public class NodeRegistry {
 
           } else {
             log.info("Node has no heartbeat " + nodeId);
+            curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
           }
         }
       } catch (Exception e) {

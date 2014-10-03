@@ -5,15 +5,11 @@ import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.apache.curator.framework.recipes.queue.QueueConsumer;
 import org.apache.curator.framework.state.ConnectionState;
-import org.openqa.selenium.Capabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.stqa.selenium.common.CapabilitiesSerializer;
 import ru.stqa.selenium.common.Curator;
 import ru.stqa.selenium.common.StringSerializer;
 
-import static ru.stqa.selenium.common.PathUtils.clientNewSessionIdPath;
-import static ru.stqa.selenium.common.PathUtils.clientPath;
 import static ru.stqa.selenium.common.PathUtils.nodePath;
 
 public class RegistrationRequestProcessor {
