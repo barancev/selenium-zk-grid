@@ -20,6 +20,10 @@ public class PathUtils {
     return nodePath(nodeId, "/slots");
   }
 
+  public static String nodeSlotPath(String nodeId, String slotId) {
+    return nodePath(nodeId, "/slots/" + slotId);
+  }
+
   public static String nodePath(String nodeId, String subPath) {
     return "/nodes/" + nodeId + subPath;
   }

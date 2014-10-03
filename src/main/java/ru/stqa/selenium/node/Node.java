@@ -1,13 +1,18 @@
 package ru.stqa.selenium.node;
 
 import com.google.common.collect.Maps;
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
+import org.apache.curator.framework.recipes.queue.DistributedQueue;
+import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.BeanToJsonConverter;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.stqa.selenium.common.CapabilitiesSerializer;
+import ru.stqa.selenium.common.Curator;
+import ru.stqa.selenium.common.StringSerializer;
+import ru.stqa.selenium.hub.Hub;
 
 import java.util.Map;
 import java.util.UUID;
@@ -17,10 +22,11 @@ import static ru.stqa.selenium.common.PathUtils.*;
 
 public class Node {
 
-  private String nodeId = UUID.randomUUID().toString();
-  private Capabilities capabilities;
+  private static Logger log = LoggerFactory.getLogger(Node.class);
 
-  private CuratorFramework client;
+  private String nodeId = UUID.randomUUID().toString();
+
+  private final Curator curator;
 
   private ScheduledExecutorService serviceExecutor;
   Map<String, ExecutorService> sessionExecutors = Maps.newHashMap();
@@ -28,18 +34,15 @@ public class Node {
   private boolean heartBeating = true;
 
   public static void main(String[] args) throws Exception {
-    Node node = new Node("localhost:4444", DesiredCapabilities.firefox());
+    Node node = new Node("localhost:4444");
     node.start();
   }
 
-  public Node(String connectionString, Capabilities capabilities) {
-    this.capabilities = capabilities;
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-    client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
+  public Node(String connectionString) {
+    curator = Curator.createCurator(connectionString);
   }
 
   private void start() throws Exception {
-    client.start();
     registerToHub();
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -59,13 +62,33 @@ public class Node {
   }
 
   private void registerToHub() throws Exception {
-    client.create().creatingParentsIfNeeded().forPath(nodeSlotsPath(nodeId),
-        new BeanToJsonConverter().convert(capabilities).getBytes());
+    registerNode();
+    registerSlots();
+  }
+
+  private void registerNode() throws Exception {
+    curator.create(nodePath(nodeId));
+    DistributedBarrier barrier = curator.createBarrier(nodePath(nodeId));
+
+    DistributedQueue<String> queue = QueueBuilder.builder(
+        curator.getClient(), null, new StringSerializer(), "/registrationRequests").buildQueue();
+    queue.start();
+    queue.put(nodeId);
+
+    if (!barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
+      throw new Error("Node can't register itself");
+    }
+  }
+
+  private void registerSlots() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      curator.setData(nodeSlotPath(nodeId, "" + i), new BeanToJsonConverter().convert(DesiredCapabilities.firefox()));
+    }
   }
 
   private void unregisterFromHub() throws Exception {
     heartBeating = false;
-    client.delete().deletingChildrenIfNeeded().forPath(nodePath(nodeId, ""));
+    curator.delete(nodePath(nodeId));
   }
 
   private class HeartBeat implements Runnable {
@@ -73,12 +96,7 @@ public class Node {
     public void run() {
       if (heartBeating) {
         try {
-          String timestamp = String.valueOf(System.currentTimeMillis());
-          if (client.checkExists().forPath(nodeHeartBeatPath(nodeId)) == null) {
-            client.create().forPath(nodeHeartBeatPath(nodeId), timestamp.getBytes());
-          } else {
-            client.setData().forPath(nodeHeartBeatPath(nodeId), timestamp.getBytes());
-          }
+          curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
         } catch (Exception e) {
           heartBeating = false;
           e.printStackTrace();

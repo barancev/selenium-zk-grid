@@ -36,14 +36,16 @@ public class NewSessionRequestProcessor {
     public void consumeMessage(Capabilities capabilities) throws Exception {
       log.info("Request for new session " + capabilities);
       String clientId = (String) capabilities.getCapability("zk-grid.clientId");
-      Slot slot = nodeRegistry.findFreeSlot(capabilities);
+      SlotInfo slot = nodeRegistry.findFreeMatchingSlot(capabilities);
       if (slot != null) {
         log.info("Slot found " + slot.getSlotId());
         curator.setData(clientNewSessionIdPath(clientId), slot.getSlotId());
-        curator.clearBarrier(clientPath(clientId));
+        slot.setBuzy(true);
       } else {
         log.info("No slot found");
+        curator.setData(clientNewSessionIdPath(clientId), "NULL");
       }
+      curator.clearBarrier(clientPath(clientId));
     }
 
     @Override

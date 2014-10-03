@@ -9,7 +9,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 public class Curator {
 
   public static Curator createCurator(String connectionString) {
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 30);
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
     CuratorFramework client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
     client.start();
     return new Curator(client);
@@ -29,11 +29,22 @@ public class Curator {
     return new String(client.getData().forPath(path));
   }
 
-  public void setData(String path, String data) throws Exception {
+  public void create(String path) throws Exception {
     if (client.checkExists().forPath(path) == null) {
       client.create().creatingParentsIfNeeded().forPath(path);
     }
-    client.setData().forPath(path, data.getBytes());
+  }
+
+  public void delete(String path) throws Exception {
+    client.delete().deletingChildrenIfNeeded().forPath(path);
+  }
+
+  public void setData(String path, String data) throws Exception {
+    if (client.checkExists().forPath(path) == null) {
+      client.create().creatingParentsIfNeeded().forPath(path, data.getBytes());
+    } else {
+      client.setData().forPath(path, data.getBytes());
+    }
   }
 
   public DistributedBarrier createBarrier(String parent) throws Exception {
@@ -48,4 +59,5 @@ public class Curator {
     String barrierPath = parent + "/barrier";
     new DistributedBarrier(client, barrierPath).removeBarrier();
   }
+
 }

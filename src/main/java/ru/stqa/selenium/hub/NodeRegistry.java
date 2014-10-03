@@ -11,6 +11,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.JsonToBeanConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.stqa.selenium.common.Curator;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -25,13 +26,13 @@ public class NodeRegistry {
 
   public static class Builder {
 
-    private CuratorFramework client;
+    private Curator curator;
 
     private long lostTimeout = 5000;
     private long deadTimeout = 10000;
 
-    public Builder(CuratorFramework client) {
-      this.client = client;
+    public Builder(Curator curator) {
+      this.curator = curator;
     }
 
     public Builder withLostTimeout(long lostTimeout) {
@@ -46,7 +47,7 @@ public class NodeRegistry {
 
     public NodeRegistry create() throws Exception {
       log.debug("Creating NodeRegistry");
-      NodeRegistry registry = new NodeRegistry(client);
+      NodeRegistry registry = new NodeRegistry(curator);
       registry.setLostTimeout(lostTimeout);
       registry.setDeadTimeout(deadTimeout);
       registry.start();
@@ -55,17 +56,17 @@ public class NodeRegistry {
     }
   }
 
-  private CuratorFramework client;
+  private Curator curator;
 
   private long lostTimeout = 5000;
   private long deadTimeout = 10000;
 
-  private Map<String, Capabilities> nodes = Maps.newHashMap();
+  private Map<String, NodeInfo> nodes = Maps.newHashMap();
 
   private ScheduledExecutorService serviceExecutor;
 
-  private NodeRegistry(CuratorFramework client) {
-    this.client = client;
+  private NodeRegistry(Curator curator) {
+    this.curator = curator;
   }
 
   private void setLostTimeout(long lostTimeout) {
@@ -77,29 +78,22 @@ public class NodeRegistry {
   }
 
   private void start() throws Exception {
-    startNodeRegistrationListener();
+    startNodesDeregistrationListener();
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
     serviceExecutor.scheduleAtFixedRate(new NodeHeartBeatWatcher(), 0, lostTimeout / 2, TimeUnit.MILLISECONDS);
   }
 
-  private void startNodeRegistrationListener() throws Exception {
+  public void addNode(String nodeId) throws Exception {
+    nodes.put(nodeId, new NodeInfo(nodeId));
+    startSlotRegistrationListener(nodeId);
+    log.info("Node added " + nodeId);
+  }
+
+  private void startNodesDeregistrationListener() throws Exception {
     PathChildrenCacheListener nodesListener = new PathChildrenCacheListener() {
       @Override
       public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
         switch (event.getType()) {
-          case CHILD_ADDED: {
-            String nodeId = ZKPaths.getNodeFromPath(event.getData().getPath());
-            String data = new String(client.getData().watched().forPath(nodeSlotsPath(nodeId)));
-            DesiredCapabilities capabilities = new JsonToBeanConverter().convert(DesiredCapabilities.class, data);
-            addNode(nodeId, capabilities);
-            break;
-          }
-
-          case CHILD_UPDATED: {
-            System.out.println("Node changed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-            break;
-          }
-
           case CHILD_REMOVED: {
             String nodeId = ZKPaths.getNodeFromPath(event.getData().getPath());
             removeNode(nodeId);
@@ -109,24 +103,59 @@ public class NodeRegistry {
       }
     };
 
-    PathChildrenCache nodesCache = new PathChildrenCache(client, "/nodes", false);
+    PathChildrenCache nodesCache = new PathChildrenCache(curator.getClient(), "/nodes", false);
     nodesCache.start();
     nodesCache.getListenable().addListener(nodesListener);
   }
 
-  public void addNode(String nodeId, Capabilities capabilities) {
-    nodes.put(nodeId, capabilities);
-    log.info("Node added " + nodeId + ": " + capabilities);
+  private void startSlotRegistrationListener(final String nodeId) throws Exception {
+    curator.create(nodeSlotsPath(nodeId));
+
+    PathChildrenCacheListener nodesListener = new PathChildrenCacheListener() {
+      @Override
+      public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+        switch (event.getType()) {
+          case CHILD_ADDED: {
+            String slotId = ZKPaths.getNodeFromPath(event.getData().getPath());
+            String data = curator.getDataForPath(nodeSlotPath(nodeId, slotId));
+            DesiredCapabilities capabilities = new JsonToBeanConverter().convert(DesiredCapabilities.class, data);
+            log.info("Slot registration request " + slotId + " " + capabilities);
+            getNode(nodeId).addSlot(slotId, capabilities);
+            break;
+          }
+
+          case CHILD_REMOVED: {
+            String slotId = ZKPaths.getNodeFromPath(event.getData().getPath());
+            log.info("Slot removed " + slotId);
+            getNode(nodeId).removeSlot(slotId);
+            break;
+          }
+        }
+      }
+    };
+
+    PathChildrenCache nodesCache = new PathChildrenCache(curator.getClient(), nodeSlotsPath(nodeId), false);
+    nodesCache.start();
+    nodesCache.getListenable().addListener(nodesListener);
   }
+
+  private NodeInfo getNode(String nodeId) {
+    return nodes.get(nodeId);
+  }
+
 
   public void removeNode(String nodeId) {
     nodes.remove(nodeId);
     log.info("Node removed " + nodeId);
   }
 
-  public Slot findFreeSlot(Capabilities capabilities) {
-    for (Map.Entry<String, Capabilities> entry : nodes.entrySet()) {
-      return new Slot(entry.getKey());
+  public SlotInfo findFreeMatchingSlot(Capabilities capabilities) {
+    for (NodeInfo node : nodes.values()) {
+      for (SlotInfo slot : node.getSlots()) {
+        if (!slot.isBuzy() && slot.match(capabilities)) {
+          return slot;
+        }
+      }
     }
     return null;
   }
@@ -135,7 +164,8 @@ public class NodeRegistry {
     @Override
     public void run() {
       try {
-        for (String nodeId : client.getChildren().forPath("/nodes")) {
+        CuratorFramework client = curator.getClient();
+        for (String nodeId : nodes.keySet()) {
           if (client.checkExists().forPath(nodeHeartBeatPath(nodeId)) != null) {
             long timestamp = Long.parseLong(new String(client.getData().forPath(nodeHeartBeatPath(nodeId))));
             long now = System.currentTimeMillis();

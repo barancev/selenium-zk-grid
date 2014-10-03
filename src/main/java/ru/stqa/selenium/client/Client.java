@@ -42,7 +42,10 @@ public class Client {
     capabilitiesCopy.setCapability("zk-grid.clientId", clientId);
     queue.put(capabilitiesCopy);
 
-    barrier.waitOnBarrier(10, TimeUnit.SECONDS);
+    if (! barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
+      throw new Error("Session creation timeout");
+    }
+
     sessionId = curator.getDataForPath(clientNewSessionIdPath(clientId));
     System.out.println("Session created " + sessionId);
   }

@@ -28,6 +28,8 @@ public class Hub {
 
   private Curator curator;
 
+  private Properties properties;
+
   private NodeRegistry nodeRegistry;
 
   public static void main(String[] args) throws Exception {
@@ -39,8 +41,8 @@ public class Hub {
       }
     };
 
-    final Hub hub = new Hub();
-    hub.start(startupProperties);
+    final Hub hub = new Hub(startupProperties);
+    hub.start();
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -50,11 +52,16 @@ public class Hub {
     });
   }
 
-  private void start(Properties properties) throws Exception {
+  public Hub(Properties properties) {
+    this.properties = properties;
+  }
+
+  private void start() throws Exception {
     startServer(properties);
     startCurator(properties.getProperty("clientPort"));
 
-    nodeRegistry = new NodeRegistry.Builder(curator.getClient()).withLostTimeout(5000).withDeadTimeout(10000).create();
+    nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(5000).withDeadTimeout(10000).create();
+    new RegistrationRequestProcessor(curator, nodeRegistry).start();
     new NewSessionRequestProcessor(curator, nodeRegistry).start();
   }
 
