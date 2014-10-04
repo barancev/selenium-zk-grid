@@ -38,6 +38,10 @@ public class PathUtils {
     return nodeSlotPath(slot, "/response");
   }
 
+  public static String nodeSlotStatePath(SlotInfo slot) {
+    return nodeSlotPath(slot, "/state");
+  }
+
   public static String nodePath(String nodeId, String subPath) {
     return "/nodes/" + nodeId + subPath;
   }

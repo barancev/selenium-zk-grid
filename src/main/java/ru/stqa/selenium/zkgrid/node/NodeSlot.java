@@ -7,9 +7,11 @@ import ru.stqa.selenium.zkgrid.common.SlotInfo;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotPath;
 import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotResponsePath;
+import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotStatePath;
 
 public class NodeSlot {
 
@@ -48,16 +50,24 @@ public class NodeSlot {
             return null;
           }
 
+          setBusyState();
+
           executingCommand = true;
+
           Response res = commandHandler.handleCommand(cmd);
 
           if (DriverCommand.NEW_SESSION.equals(cmd.getName())) {
             if (ErrorCodes.SUCCESS_STRING.equals(res.getState())) {
               sessionId = res.getSessionId();
+              setBusyState();
+
+            } else {
+              setFreeState();
             }
           } else if (DriverCommand.QUIT.equals(cmd.getName())) {
             if (ErrorCodes.SUCCESS_STRING.equals(res.getState())) {
               sessionId = null;
+              setFreeState();
             }
           }
 
@@ -69,5 +79,22 @@ public class NodeSlot {
         }
       }
     });
+  }
+
+  private void setBusyState() throws Exception {
+    curator.setData(nodeSlotStatePath(slotInfo), "busy");
+  }
+
+  private void setFreeState() {
+    serviceExecutor.schedule(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          curator.setData(nodeSlotStatePath(slotInfo), "free");
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        }
+      }
+    }, 5, TimeUnit.SECONDS);
   }
 }

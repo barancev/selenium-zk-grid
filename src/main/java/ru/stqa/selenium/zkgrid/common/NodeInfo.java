@@ -16,8 +16,10 @@ public class NodeInfo {
     this.nodeId = nodeId;
   }
 
-  public void addSlot(String slotId, DesiredCapabilities capabilities) {
-    slots.put(slotId, new SlotInfo(nodeId, slotId, capabilities));
+  public SlotInfo addSlot(String slotId, DesiredCapabilities capabilities) {
+    SlotInfo slot = new SlotInfo(nodeId, slotId, capabilities);
+    slots.put(slotId, slot);
+    return slot;
   }
 
   public void removeSlot(String slotId) {

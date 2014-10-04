@@ -2,9 +2,7 @@ package ru.stqa.selenium.zkgrid.hub;
 
 import com.google.common.collect.Maps;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
+import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.utils.ZKPaths;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -122,7 +120,8 @@ public class NodeRegistry {
             String data = curator.getDataForPath(nodeSlotPath(nodeId, slotId));
             DesiredCapabilities capabilities = new JsonToBeanConverter().convert(DesiredCapabilities.class, data);
             log.info("Slot registration request " + slotId + " " + capabilities);
-            getNode(nodeId).addSlot(slotId, capabilities);
+            SlotInfo slot = getNode(nodeId).addSlot(slotId, capabilities);
+            startSlotStateListener(slot);
             break;
           }
 
@@ -139,6 +138,26 @@ public class NodeRegistry {
     PathChildrenCache nodesCache = new PathChildrenCache(curator.getClient(), nodeSlotsPath(nodeId), false);
     nodesCache.start();
     nodesCache.getListenable().addListener(nodesListener);
+  }
+
+  private void startSlotStateListener(final SlotInfo slot) throws Exception {
+    final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotStatePath(slot), false);
+    nodeCache.start();
+
+    NodeCacheListener nodesListener = new NodeCacheListener () {
+      @Override
+      public void nodeChanged() throws Exception {
+        String data = new String(nodeCache.getCurrentData().getData());
+        log.info("Slot state changed to " + data);
+        if ("busy".equals(data)) {
+          slot.setBusy(true);
+        } else {
+          slot.setBusy(false);
+        }
+      }
+    };
+
+    nodeCache.getListenable().addListener(nodesListener);
   }
 
   private NodeInfo getNode(String nodeId) {
