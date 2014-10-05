@@ -4,13 +4,9 @@ import org.openqa.selenium.UnsupportedCommandException;
 import org.openqa.selenium.remote.Command;
 import org.openqa.selenium.remote.ErrorCodes;
 import org.openqa.selenium.remote.Response;
-import org.openqa.selenium.remote.server.DriverSessions;
-import org.openqa.selenium.remote.server.handler.*;
-import org.openqa.selenium.remote.server.handler.html5.*;
-import org.openqa.selenium.remote.server.handler.interactions.*;
-import org.openqa.selenium.remote.server.handler.interactions.touch.*;
-import org.openqa.selenium.remote.server.rest.RestishHandler;
-import org.openqa.selenium.remote.server.rest.ResultConfig;
+import shaded.org.openqa.selenium.remote.server.DriverSessions;
+import shaded.org.openqa.selenium.remote.server.rest.RestishHandler;
+import shaded.org.openqa.selenium.remote.server.rest.ResultConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,131 +60,131 @@ public class CommandHandler {
   }
 
   private void setUpMappings() {
-    addNewMapping(STATUS, Status.class);
-    addNewMapping(GET_ALL_SESSIONS, GetAllSessions.class);
-    addNewMapping(NEW_SESSION, NewSession.class);
-    addNewMapping(GET_CAPABILITIES, GetSessionCapabilities.class);
-    addNewMapping(QUIT, DeleteSession.class);
+    addNewMapping(STATUS, shaded.org.openqa.selenium.remote.server.handler.Status.class);
+    addNewMapping(GET_ALL_SESSIONS, shaded.org.openqa.selenium.remote.server.handler.GetAllSessions.class);
+    addNewMapping(NEW_SESSION, shaded.org.openqa.selenium.remote.server.handler.NewSession.class);
+    addNewMapping(GET_CAPABILITIES, shaded.org.openqa.selenium.remote.server.handler.GetSessionCapabilities.class);
+    addNewMapping(QUIT, shaded.org.openqa.selenium.remote.server.handler.DeleteSession.class);
 
-    addNewMapping(GET_CURRENT_WINDOW_HANDLE, GetCurrentWindowHandle.class);
-    addNewMapping(GET_WINDOW_HANDLES, GetAllWindowHandles.class);
+    addNewMapping(GET_CURRENT_WINDOW_HANDLE, shaded.org.openqa.selenium.remote.server.handler.GetCurrentWindowHandle.class);
+    addNewMapping(GET_WINDOW_HANDLES, shaded.org.openqa.selenium.remote.server.handler.GetAllWindowHandles.class);
 
-    addNewMapping(DISMISS_ALERT, DismissAlert.class);
-    addNewMapping(ACCEPT_ALERT, AcceptAlert.class);
-    addNewMapping(GET_ALERT_TEXT, GetAlertText.class);
-    addNewMapping(SET_ALERT_VALUE, SetAlertText.class);
+    addNewMapping(DISMISS_ALERT, shaded.org.openqa.selenium.remote.server.handler.DismissAlert.class);
+    addNewMapping(ACCEPT_ALERT, shaded.org.openqa.selenium.remote.server.handler.AcceptAlert.class);
+    addNewMapping(GET_ALERT_TEXT, shaded.org.openqa.selenium.remote.server.handler.GetAlertText.class);
+    addNewMapping(SET_ALERT_VALUE, shaded.org.openqa.selenium.remote.server.handler.SetAlertText.class);
 
-    addNewMapping(GET, ChangeUrl.class);
-    addNewMapping(GET_CURRENT_URL, GetCurrentUrl.class);
-    addNewMapping(GO_FORWARD, GoForward.class);
-    addNewMapping(GO_BACK, GoBack.class);
-    addNewMapping(REFRESH, RefreshPage.class);
+    addNewMapping(GET, shaded.org.openqa.selenium.remote.server.handler.ChangeUrl.class);
+    addNewMapping(GET_CURRENT_URL, shaded.org.openqa.selenium.remote.server.handler.GetCurrentUrl.class);
+    addNewMapping(GO_FORWARD, shaded.org.openqa.selenium.remote.server.handler.GoForward.class);
+    addNewMapping(GO_BACK, shaded.org.openqa.selenium.remote.server.handler.GoBack.class);
+    addNewMapping(REFRESH, shaded.org.openqa.selenium.remote.server.handler.RefreshPage.class);
 
-    addNewMapping(EXECUTE_SCRIPT, ExecuteScript.class);
-    addNewMapping(EXECUTE_ASYNC_SCRIPT, ExecuteAsyncScript.class);
+    addNewMapping(EXECUTE_SCRIPT, shaded.org.openqa.selenium.remote.server.handler.ExecuteScript.class);
+    addNewMapping(EXECUTE_ASYNC_SCRIPT, shaded.org.openqa.selenium.remote.server.handler.ExecuteAsyncScript.class);
 
-    addNewMapping(GET_PAGE_SOURCE, GetPageSource.class);
+    addNewMapping(GET_PAGE_SOURCE, shaded.org.openqa.selenium.remote.server.handler.GetPageSource.class);
 
-    addNewMapping(SCREENSHOT, CaptureScreenshot.class);
+    addNewMapping(SCREENSHOT, shaded.org.openqa.selenium.remote.server.handler.CaptureScreenshot.class);
 
-    addNewMapping(GET_TITLE, GetTitle.class);
+    addNewMapping(GET_TITLE, shaded.org.openqa.selenium.remote.server.handler.GetTitle.class);
 
-    addNewMapping(FIND_ELEMENT, FindElement.class);
-    addNewMapping(FIND_ELEMENTS, FindElements.class);
-    addNewMapping(GET_ACTIVE_ELEMENT, FindActiveElement.class);
+    addNewMapping(FIND_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.FindElement.class);
+    addNewMapping(FIND_ELEMENTS, shaded.org.openqa.selenium.remote.server.handler.FindElements.class);
+    addNewMapping(GET_ACTIVE_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.FindActiveElement.class);
 
-    addNewMapping(FIND_CHILD_ELEMENT, FindChildElement.class);
-    addNewMapping(FIND_CHILD_ELEMENTS, FindChildElements.class);
+    addNewMapping(FIND_CHILD_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.FindChildElement.class);
+    addNewMapping(FIND_CHILD_ELEMENTS, shaded.org.openqa.selenium.remote.server.handler.FindChildElements.class);
 
-    addNewMapping(CLICK_ELEMENT, ClickElement.class);
-    addNewMapping(GET_ELEMENT_TEXT, GetElementText.class);
-    addNewMapping(SUBMIT_ELEMENT, SubmitElement.class);
+    addNewMapping(CLICK_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.ClickElement.class);
+    addNewMapping(GET_ELEMENT_TEXT, shaded.org.openqa.selenium.remote.server.handler.GetElementText.class);
+    addNewMapping(SUBMIT_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.SubmitElement.class);
 
-    addNewMapping(UPLOAD_FILE, UploadFile.class);
-    addNewMapping(SEND_KEYS_TO_ELEMENT, SendKeys.class);
-    addNewMapping(GET_ELEMENT_TAG_NAME, GetTagName.class);
+    addNewMapping(UPLOAD_FILE, shaded.org.openqa.selenium.remote.server.handler.UploadFile.class);
+    addNewMapping(SEND_KEYS_TO_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.SendKeys.class);
+    addNewMapping(GET_ELEMENT_TAG_NAME, shaded.org.openqa.selenium.remote.server.handler.GetTagName.class);
 
-    addNewMapping(CLEAR_ELEMENT, ClearElement.class);
-    addNewMapping(IS_ELEMENT_SELECTED, GetElementSelected.class);
-    addNewMapping(IS_ELEMENT_ENABLED, GetElementEnabled.class);
-    addNewMapping(IS_ELEMENT_DISPLAYED, GetElementDisplayed.class);
-    addNewMapping(GET_ELEMENT_LOCATION, GetElementLocation.class);
-    addNewMapping(GET_ELEMENT_LOCATION_ONCE_SCROLLED_INTO_VIEW, GetElementLocationInView.class);
-    addNewMapping(GET_ELEMENT_SIZE, GetElementSize.class);
-    addNewMapping(GET_ELEMENT_VALUE_OF_CSS_PROPERTY, GetCssProperty.class);
+    addNewMapping(CLEAR_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.ClearElement.class);
+    addNewMapping(IS_ELEMENT_SELECTED, shaded.org.openqa.selenium.remote.server.handler.GetElementSelected.class);
+    addNewMapping(IS_ELEMENT_ENABLED, shaded.org.openqa.selenium.remote.server.handler.GetElementEnabled.class);
+    addNewMapping(IS_ELEMENT_DISPLAYED, shaded.org.openqa.selenium.remote.server.handler.GetElementDisplayed.class);
+    addNewMapping(GET_ELEMENT_LOCATION, shaded.org.openqa.selenium.remote.server.handler.GetElementLocation.class);
+    addNewMapping(GET_ELEMENT_LOCATION_ONCE_SCROLLED_INTO_VIEW, shaded.org.openqa.selenium.remote.server.handler.GetElementLocationInView.class);
+    addNewMapping(GET_ELEMENT_SIZE, shaded.org.openqa.selenium.remote.server.handler.GetElementSize.class);
+    addNewMapping(GET_ELEMENT_VALUE_OF_CSS_PROPERTY, shaded.org.openqa.selenium.remote.server.handler.GetCssProperty.class);
 
-    addNewMapping(GET_ELEMENT_ATTRIBUTE, GetElementAttribute.class);
-    addNewMapping(ELEMENT_EQUALS, ElementEquality.class);
+    addNewMapping(GET_ELEMENT_ATTRIBUTE, shaded.org.openqa.selenium.remote.server.handler.GetElementAttribute.class);
+    addNewMapping(ELEMENT_EQUALS, shaded.org.openqa.selenium.remote.server.handler.ElementEquality.class);
 
-    addNewMapping(GET_ALL_COOKIES, GetAllCookies.class);
-    addNewMapping(ADD_COOKIE, AddCookie.class);
-    addNewMapping(DELETE_ALL_COOKIES, DeleteCookie.class);
-    addNewMapping(DELETE_COOKIE, DeleteNamedCookie.class);
+    addNewMapping(GET_ALL_COOKIES, shaded.org.openqa.selenium.remote.server.handler.GetAllCookies.class);
+    addNewMapping(ADD_COOKIE, shaded.org.openqa.selenium.remote.server.handler.AddCookie.class);
+    addNewMapping(DELETE_ALL_COOKIES, shaded.org.openqa.selenium.remote.server.handler.DeleteCookie.class);
+    addNewMapping(DELETE_COOKIE, shaded.org.openqa.selenium.remote.server.handler.DeleteNamedCookie.class);
 
-    addNewMapping(SWITCH_TO_FRAME, SwitchToFrame.class);
-    addNewMapping(SWITCH_TO_PARENT_FRAME, SwitchToParentFrame.class);
-    addNewMapping(SWITCH_TO_WINDOW, SwitchToWindow.class);
-    addNewMapping(CLOSE, CloseWindow.class);
+    addNewMapping(SWITCH_TO_FRAME, shaded.org.openqa.selenium.remote.server.handler.SwitchToFrame.class);
+    addNewMapping(SWITCH_TO_PARENT_FRAME, shaded.org.openqa.selenium.remote.server.handler.SwitchToParentFrame.class);
+    addNewMapping(SWITCH_TO_WINDOW, shaded.org.openqa.selenium.remote.server.handler.SwitchToWindow.class);
+    addNewMapping(CLOSE, shaded.org.openqa.selenium.remote.server.handler.CloseWindow.class);
 
-    addNewMapping(GET_WINDOW_SIZE, GetWindowSize.class);
-    addNewMapping(SET_WINDOW_SIZE, SetWindowSize.class);
-    addNewMapping(GET_WINDOW_POSITION, GetWindowPosition.class);
-    addNewMapping(SET_WINDOW_POSITION, SetWindowPosition.class);
-    addNewMapping(MAXIMIZE_WINDOW, MaximizeWindow.class);
+    addNewMapping(GET_WINDOW_SIZE, shaded.org.openqa.selenium.remote.server.handler.GetWindowSize.class);
+    addNewMapping(SET_WINDOW_SIZE, shaded.org.openqa.selenium.remote.server.handler.SetWindowSize.class);
+    addNewMapping(GET_WINDOW_POSITION, shaded.org.openqa.selenium.remote.server.handler.GetWindowPosition.class);
+    addNewMapping(SET_WINDOW_POSITION, shaded.org.openqa.selenium.remote.server.handler.SetWindowPosition.class);
+    addNewMapping(MAXIMIZE_WINDOW, shaded.org.openqa.selenium.remote.server.handler.MaximizeWindow.class);
 
-    addNewMapping(SET_TIMEOUT, ConfigureTimeout.class);
-    addNewMapping(IMPLICITLY_WAIT, ImplicitlyWait.class);
-    addNewMapping(SET_SCRIPT_TIMEOUT, SetScriptTimeout.class);
+    addNewMapping(SET_TIMEOUT, shaded.org.openqa.selenium.remote.server.handler.ConfigureTimeout.class);
+    addNewMapping(IMPLICITLY_WAIT, shaded.org.openqa.selenium.remote.server.handler.ImplicitlyWait.class);
+    addNewMapping(SET_SCRIPT_TIMEOUT, shaded.org.openqa.selenium.remote.server.handler.SetScriptTimeout.class);
 
-    addNewMapping(EXECUTE_SQL, ExecuteSQL.class);
+    addNewMapping(EXECUTE_SQL, shaded.org.openqa.selenium.remote.server.handler.html5.ExecuteSQL.class);
 
-    addNewMapping(GET_LOCATION, GetLocationContext.class);
-    addNewMapping(SET_LOCATION,  SetLocationContext.class);
+    addNewMapping(GET_LOCATION, shaded.org.openqa.selenium.remote.server.handler.html5.GetLocationContext.class);
+    addNewMapping(SET_LOCATION,  shaded.org.openqa.selenium.remote.server.handler.html5.SetLocationContext.class);
 
-    addNewMapping(GET_APP_CACHE_STATUS, GetAppCacheStatus.class);
+    addNewMapping(GET_APP_CACHE_STATUS, shaded.org.openqa.selenium.remote.server.handler.html5.GetAppCacheStatus.class);
 
-    addNewMapping(GET_LOCAL_STORAGE_ITEM, GetLocalStorageItem.class);
-    addNewMapping(REMOVE_LOCAL_STORAGE_ITEM, RemoveLocalStorageItem.class);
-    addNewMapping(GET_LOCAL_STORAGE_KEYS, GetLocalStorageKeys.class);
-    addNewMapping(SET_LOCAL_STORAGE_ITEM, SetLocalStorageItem.class);
-    addNewMapping(CLEAR_LOCAL_STORAGE, ClearLocalStorage.class);
-    addNewMapping(GET_LOCAL_STORAGE_SIZE, GetLocalStorageSize.class);
+    addNewMapping(GET_LOCAL_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.GetLocalStorageItem.class);
+    addNewMapping(REMOVE_LOCAL_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.RemoveLocalStorageItem.class);
+    addNewMapping(GET_LOCAL_STORAGE_KEYS, shaded.org.openqa.selenium.remote.server.handler.html5.GetLocalStorageKeys.class);
+    addNewMapping(SET_LOCAL_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.SetLocalStorageItem.class);
+    addNewMapping(CLEAR_LOCAL_STORAGE, shaded.org.openqa.selenium.remote.server.handler.html5.ClearLocalStorage.class);
+    addNewMapping(GET_LOCAL_STORAGE_SIZE, shaded.org.openqa.selenium.remote.server.handler.html5.GetLocalStorageSize.class);
 
-    addNewMapping(GET_SESSION_STORAGE_ITEM, GetSessionStorageItem.class);
-    addNewMapping(REMOVE_SESSION_STORAGE_ITEM, RemoveSessionStorageItem.class);
-    addNewMapping(GET_SESSION_STORAGE_KEYS, GetSessionStorageKeys.class);
-    addNewMapping(SET_SESSION_STORAGE_ITEM, SetSessionStorageItem.class);
-    addNewMapping(CLEAR_SESSION_STORAGE, ClearSessionStorage.class);
-    addNewMapping(GET_SESSION_STORAGE_SIZE, GetSessionStorageSize.class);
+    addNewMapping(GET_SESSION_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.GetSessionStorageItem.class);
+    addNewMapping(REMOVE_SESSION_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.RemoveSessionStorageItem.class);
+    addNewMapping(GET_SESSION_STORAGE_KEYS, shaded.org.openqa.selenium.remote.server.handler.html5.GetSessionStorageKeys.class);
+    addNewMapping(SET_SESSION_STORAGE_ITEM, shaded.org.openqa.selenium.remote.server.handler.html5.SetSessionStorageItem.class);
+    addNewMapping(CLEAR_SESSION_STORAGE, shaded.org.openqa.selenium.remote.server.handler.html5.ClearSessionStorage.class);
+    addNewMapping(GET_SESSION_STORAGE_SIZE, shaded.org.openqa.selenium.remote.server.handler.html5.GetSessionStorageSize.class);
 
-    addNewMapping(GET_SCREEN_ORIENTATION, GetScreenOrientation.class);
-    addNewMapping(SET_SCREEN_ORIENTATION, Rotate.class);
+    addNewMapping(GET_SCREEN_ORIENTATION, shaded.org.openqa.selenium.remote.server.handler.GetScreenOrientation.class);
+    addNewMapping(SET_SCREEN_ORIENTATION, shaded.org.openqa.selenium.remote.server.handler.Rotate.class);
 
-    addNewMapping(MOVE_TO, MouseMoveToLocation.class);
-    addNewMapping(CLICK, ClickInSession.class);
-    addNewMapping(DOUBLE_CLICK, DoubleClickInSession.class);
-    addNewMapping(MOUSE_DOWN, MouseDown.class);
-    addNewMapping(MOUSE_UP, MouseUp.class);
-    addNewMapping(SEND_KEYS_TO_ACTIVE_ELEMENT, SendKeyToActiveElement.class);
+    addNewMapping(MOVE_TO, shaded.org.openqa.selenium.remote.server.handler.interactions.MouseMoveToLocation.class);
+    addNewMapping(CLICK, shaded.org.openqa.selenium.remote.server.handler.interactions.ClickInSession.class);
+    addNewMapping(DOUBLE_CLICK, shaded.org.openqa.selenium.remote.server.handler.interactions.DoubleClickInSession.class);
+    addNewMapping(MOUSE_DOWN, shaded.org.openqa.selenium.remote.server.handler.interactions.MouseDown.class);
+    addNewMapping(MOUSE_UP, shaded.org.openqa.selenium.remote.server.handler.interactions.MouseUp.class);
+    addNewMapping(SEND_KEYS_TO_ACTIVE_ELEMENT, shaded.org.openqa.selenium.remote.server.handler.interactions.SendKeyToActiveElement.class);
 
-    addNewMapping(IME_GET_AVAILABLE_ENGINES, ImeGetAvailableEngines.class);
-    addNewMapping(IME_GET_ACTIVE_ENGINE, ImeGetActiveEngine.class);
-    addNewMapping(IME_IS_ACTIVATED, ImeIsActivated.class);
-    addNewMapping(IME_DEACTIVATE, ImeDeactivate.class);
-    addNewMapping(IME_ACTIVATE_ENGINE, ImeActivateEngine.class);
+    addNewMapping(IME_GET_AVAILABLE_ENGINES, shaded.org.openqa.selenium.remote.server.handler.ImeGetAvailableEngines.class);
+    addNewMapping(IME_GET_ACTIVE_ENGINE, shaded.org.openqa.selenium.remote.server.handler.ImeGetActiveEngine.class);
+    addNewMapping(IME_IS_ACTIVATED, shaded.org.openqa.selenium.remote.server.handler.ImeIsActivated.class);
+    addNewMapping(IME_DEACTIVATE, shaded.org.openqa.selenium.remote.server.handler.ImeDeactivate.class);
+    addNewMapping(IME_ACTIVATE_ENGINE, shaded.org.openqa.selenium.remote.server.handler.ImeActivateEngine.class);
 
     // Advanced Touch API
-    addNewMapping(TOUCH_SINGLE_TAP, SingleTapOnElement.class);
-    addNewMapping(TOUCH_DOWN, Down.class);
-    addNewMapping(TOUCH_UP, Up.class);
-    addNewMapping(TOUCH_MOVE, Move.class);
-    addNewMapping(TOUCH_SCROLL, Scroll.class);
-    addNewMapping(TOUCH_DOUBLE_TAP, DoubleTapOnElement.class);
-    addNewMapping(TOUCH_LONG_PRESS, LongPressOnElement.class);
-    addNewMapping(TOUCH_FLICK, Flick.class);
+    addNewMapping(TOUCH_SINGLE_TAP, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.SingleTapOnElement.class);
+    addNewMapping(TOUCH_DOWN, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.Down.class);
+    addNewMapping(TOUCH_UP, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.Up.class);
+    addNewMapping(TOUCH_MOVE, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.Move.class);
+    addNewMapping(TOUCH_SCROLL, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.Scroll.class);
+    addNewMapping(TOUCH_DOUBLE_TAP, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.DoubleTapOnElement.class);
+    addNewMapping(TOUCH_LONG_PRESS, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.LongPressOnElement.class);
+    addNewMapping(TOUCH_FLICK, shaded.org.openqa.selenium.remote.server.handler.interactions.touch.Flick.class);
 
-    addNewMapping(GET_AVAILABLE_LOG_TYPES, GetAvailableLogTypesHandler.class);
-    addNewMapping(GET_LOG, GetLogHandler.class);
-    addNewMapping(GET_SESSION_LOGS, GetSessionLogsHandler.class);
+    addNewMapping(GET_AVAILABLE_LOG_TYPES, shaded.org.openqa.selenium.remote.server.handler.GetAvailableLogTypesHandler.class);
+    addNewMapping(GET_LOG, shaded.org.openqa.selenium.remote.server.handler.GetLogHandler.class);
+    addNewMapping(GET_SESSION_LOGS, shaded.org.openqa.selenium.remote.server.handler.GetSessionLogsHandler.class);
   }
 }

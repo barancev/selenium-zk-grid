@@ -7,7 +7,7 @@ import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.*;
-import org.openqa.selenium.remote.server.DefaultDriverSessions;
+import shaded.org.openqa.selenium.remote.server.DefaultDriverSessions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;

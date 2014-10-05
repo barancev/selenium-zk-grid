@@ -49,15 +49,6 @@
     <orderEntry type="library" name="Maven: org.webbitserver:webbit:0.4.14" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty:3.5.2.Final" level="project" />
     <orderEntry type="library" name="Maven: org.seleniumhq.selenium:selenium-support:2.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: org.seleniumhq.selenium:selenium-server:2.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.48" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.48" level="project" />
-    <orderEntry type="library" name="Maven: mx4j:mx4j-tools:3.0.1" level="project" />
-    <orderEntry type="library" name="Maven: org.mortbay.jetty:servlet-api-2.5:6.1.9" level="project" />
-    <orderEntry type="library" name="Maven: org.seleniumhq.selenium:jetty-repacked:7.6.1" level="project" />
-    <orderEntry type="library" name="Maven: org.seleniumhq.selenium:jetty-rc-repacked:5" level="project" />
-    <orderEntry type="library" name="Maven: net.jcip:jcip-annotations:1.0" level="project" />
-    <orderEntry type="library" name="Maven: org.yaml:snakeyaml:1.8" level="project" />
     <orderEntry type="library" name="Maven: org.apache.curator:curator-recipes:2.6.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.curator:curator-framework:2.6.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.curator:curator-client:2.6.0" level="project" />
