@@ -2,6 +2,10 @@ package ru.stqa.selenium.zkgrid.common;
 
 public class PathUtils {
 
+  public static String hubPath() {
+    return "/hub";
+  }
+
   public static String nodePath(String nodeId) {
     return nodePath(nodeId, "");
   }

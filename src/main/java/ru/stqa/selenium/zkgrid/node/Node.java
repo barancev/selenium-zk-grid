@@ -24,6 +24,8 @@ public class Node {
 
   private static Logger log = LoggerFactory.getLogger(Node.class);
 
+  private NodeParameters params;
+
   private String nodeId = UUID.randomUUID().toString();
   private Map<String, NodeSlot> slots = Maps.newHashMap();
 
@@ -33,16 +35,18 @@ public class Node {
 
   private ScheduledExecutorService serviceExecutor;
 
+  private long heartBeatPeriod;
   private boolean heartBeating = true;
   private CommandHandler commandHandler;
 
   public static void main(String[] args) throws Exception {
-    Node node = new Node("localhost:4444");
+    Node node = new Node(new NodeParameters());
     node.start();
   }
 
-  public Node(String connectionString) {
-    curator = Curator.createCurator(connectionString);
+  public Node(NodeParameters params) {
+    this.params = params;
+    curator = Curator.createCurator(params.getHubConnectionString());
   }
 
   public void start() throws Exception {
@@ -53,7 +57,7 @@ public class Node {
     registerSlots();
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
-    serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 1, 1, TimeUnit.SECONDS);
+    serviceExecutor.scheduleAtFixedRate(new HeartBeat(), heartBeatPeriod, heartBeatPeriod, TimeUnit.SECONDS);
   }
 
   private void registerNode() throws Exception {
@@ -68,6 +72,9 @@ public class Node {
     if (!barrier.waitOnBarrier(10, TimeUnit.SECONDS)) {
       throw new Error("Node can't register itself");
     }
+
+    Map<String, Object> hubConfig = new JsonToBeanConverter().convert(Map.class, curator.getDataForPath(hubPath()));
+    heartBeatPeriod = (Long) hubConfig.get("heartBeatPeriod");
   }
 
   private void registerSlots() throws Exception {

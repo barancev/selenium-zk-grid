@@ -1,6 +1,8 @@
 package ru.stqa.selenium.zkgrid.hub;
 
+import com.beust.jcommander.internal.Maps;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -8,7 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 
+import java.util.Map;
 import java.util.Properties;
+
+import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
 /**
  * Hello world!
@@ -24,24 +29,16 @@ public class Hub {
     }
   }
 
+  private HubParameters params;
+
   private SeleniumZooKeeperServer zooKeeperServer;
 
   private Curator curator;
 
-  private Properties properties;
-
   private NodeRegistry nodeRegistry;
 
   public static void main(String[] args) throws Exception {
-    Properties startupProperties = new Properties() {
-      {
-        setProperty("dataDir", Files.createTempDir().getAbsolutePath());
-        setProperty("clientPort", "4444");
-        setProperty("server.1", "localhost:5444:6444");
-      }
-    };
-
-    final Hub hub = new Hub(startupProperties);
+    final Hub hub = new Hub(new HubParameters());
     hub.start();
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -52,13 +49,20 @@ public class Hub {
     });
   }
 
-  public Hub(Properties properties) {
-    this.properties = properties;
+  public Hub(final HubParameters params) {
+    this.params = params;
   }
 
   public void start() throws Exception {
+    Properties properties = new Properties();
+    properties.setProperty("dataDir", Files.createTempDir().getAbsolutePath());
+    properties.setProperty("clientPort", String.valueOf(params.getPort()));
     startServer(properties);
     startCurator(properties.getProperty("clientPort"));
+
+    Map<String, Object> config = Maps.newHashMap();
+    config.put("heartBeatPeriod", params.getHeartBeatPeriod());
+    curator.setData(hubPath(), new Gson().toJson(config));
 
     nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(10000).withDeadTimeout(20000).create();
     new RegistrationRequestProcessor(curator, nodeRegistry).start();

@@ -4,13 +4,10 @@ import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParametersDelegate;
-import com.beust.jcommander.internal.Lists;
-import com.google.common.io.Files;
 import ru.stqa.selenium.zkgrid.hub.Hub;
+import ru.stqa.selenium.zkgrid.hub.HubParameters;
 import ru.stqa.selenium.zkgrid.node.Node;
-
-import java.util.List;
-import java.util.Properties;
+import ru.stqa.selenium.zkgrid.node.NodeParameters;
 
 public class Main {
 
@@ -25,17 +22,12 @@ public class Main {
 
     switch (main.role) {
       case HUB: {
-        Properties properties = new Properties(){{
-          setProperty("dataDir", Files.createTempDir().getAbsolutePath());
-          setProperty("clientPort", main.hubParameters.getPort());
-          setProperty("server.1", "localhost:5444:6444");
-        }};
-        Hub hub = new Hub(properties);
+        Hub hub = new Hub(main.hubParameters);
         hub.start();
         break;
       }
       case NODE: {
-        Node node = new Node(main.nodeParameters.hubConnectionString);
+        Node node = new Node(main.nodeParameters);
         node.start();
         break;
       }
