@@ -45,7 +45,7 @@ public class Node {
     curator = Curator.createCurator(connectionString);
   }
 
-  private void start() throws Exception {
+  public void start() throws Exception {
     sessions = new DefaultDriverSessions();
     commandHandler = new CommandHandler(sessions);
 

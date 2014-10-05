@@ -56,7 +56,7 @@ public class Hub {
     this.properties = properties;
   }
 
-  private void start() throws Exception {
+  public void start() throws Exception {
     startServer(properties);
     startCurator(properties.getProperty("clientPort"));
 
