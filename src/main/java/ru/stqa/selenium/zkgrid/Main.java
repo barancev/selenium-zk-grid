@@ -54,9 +54,6 @@ public class Main {
   @ParametersDelegate
   private NodeParameters nodeParameters = new NodeParameters();
 
-  @Parameter
-  List<String> otherParameters = Lists.newArrayList();
-
   private enum Role {
     HUB, NODE
   }
