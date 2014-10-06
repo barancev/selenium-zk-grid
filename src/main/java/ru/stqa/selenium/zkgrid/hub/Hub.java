@@ -94,7 +94,7 @@ public class Hub {
   }
 
   private void startCurator(String port) throws Exception {
-    curator = Curator.createCurator("localhost:" + port);
+    curator = Curator.createCurator("localhost:" + port, log);
     curator.getClient().create().forPath("/nodes");
   }
 

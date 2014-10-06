@@ -4,21 +4,34 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.slf4j.Logger;
 
 public class Curator {
 
-  public static Curator createCurator(String connectionString) {
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
-    CuratorFramework client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
-    client.start();
-    return new Curator(client);
+  public static Curator createCurator(String connectionString, Logger log) {
+    Curator curator = new Curator(connectionString, log);
+    curator.start();
+    return curator;
   }
 
+  private Logger log;
+  private String connectionString;
   private CuratorFramework client;
 
-  public Curator(CuratorFramework client) {
-    this.client = client;
+  public Curator(String connectionString, Logger log) {
+    this.connectionString = connectionString;
+    this.log = log;
+  }
+
+  public void start() {
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
+    client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
+    client.getConnectionStateListenable().addListener(new CuratorConnectionListener());
+    client.start();
+    log.info("Curator started");
   }
 
   public CuratorFramework getClient() {
@@ -60,4 +73,28 @@ public class Curator {
     new DistributedBarrier(client, barrierPath).removeBarrier();
   }
 
+  private class CuratorConnectionListener implements ConnectionStateListener {
+    @Override
+    public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
+      switch (connectionState) {
+        case CONNECTED: {
+          log.warn("Connection to ZK server established");
+          break;
+        }
+        case SUSPENDED: {
+          log.warn("Connection to ZK server suspended");
+          break;
+        }
+        case RECONNECTED: {
+          log.warn("Connection to ZK server reconnected");
+          break;
+        }
+        case LOST: {
+          log.warn("Connection to ZK server lost");
+          //client.close();
+          break;
+        }
+      }
+    }
+  }
 }

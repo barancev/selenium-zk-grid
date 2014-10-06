@@ -46,7 +46,7 @@ public class Node {
 
   public Node(NodeParameters params) {
     this.params = params;
-    curator = Curator.createCurator(params.getHubConnectionString());
+    curator = Curator.createCurator(params.getHubConnectionString(), log);
   }
 
   public void start() throws Exception {
@@ -57,7 +57,7 @@ public class Node {
     registerSlots();
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
-    serviceExecutor.scheduleAtFixedRate(new HeartBeat(), heartBeatPeriod, heartBeatPeriod, TimeUnit.SECONDS);
+    serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 0, heartBeatPeriod, TimeUnit.SECONDS);
   }
 
   private void registerNode() throws Exception {

@@ -1,5 +1,6 @@
 package ru.stqa.selenium.zkgrid.client;
 
+import com.beust.jcommander.internal.Maps;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
@@ -12,6 +13,7 @@ import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -31,11 +33,15 @@ public class Client {
   public static void main(String[] args) throws Exception {
     Client wdClient = new Client("localhost:4444");
     wdClient.startNewSession(DesiredCapabilities.firefox());
+    for (int i = 0; i < 30; i++) {
+      wdClient.get("http://localhost");
+      Thread.sleep(2000);
+    }
     wdClient.quit();
   }
 
   public Client(String connectionString) throws InterruptedException {
-    curator = Curator.createCurator(connectionString);
+    curator = Curator.createCurator(connectionString, log);
   }
 
   private void startNewSession(final Capabilities capabilities) throws Exception {
@@ -75,6 +81,12 @@ public class Client {
     Response res = new JsonToBeanConverter().convert(Response.class, curator.getDataForPath(nodeSlotResponsePath(slot)));
     log.info("Response is " + res);
     return res;
+  }
+
+  private void get(String url) throws Exception {
+    Map<String, Object> parameters = Maps.newHashMap();
+    parameters.put("url", url);
+    Response res = sendCommand(new Command(new SessionId(sessionId), DriverCommand.GET, parameters));
   }
 
   private void quit() throws Exception {
