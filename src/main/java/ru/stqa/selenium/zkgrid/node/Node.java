@@ -7,6 +7,7 @@ import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.remote.*;
+import ru.stqa.selenium.zkgrid.common.CuratorStateListener;
 import shaded.org.openqa.selenium.remote.server.DefaultDriverSessions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,8 @@ public class Node {
 
   private Curator curator;
 
-  private ScheduledExecutorService serviceExecutor;
+  private ScheduledExecutorService heartBeatingService;
+  private ScheduledFuture<?> heartBeatingFuture;
 
   private long heartBeatPeriod;
   private boolean heartBeating = true;
@@ -44,9 +46,10 @@ public class Node {
     node.start();
   }
 
-  public Node(NodeParameters params) {
+  public Node(NodeParameters params) throws Exception {
     this.params = params;
     curator = Curator.createCurator(params.getHubConnectionString(), log);
+    curator.addStateListener(new NodeCuratorStateListener());
   }
 
   public void start() throws Exception {
@@ -56,8 +59,16 @@ public class Node {
     registerNode();
     registerSlots();
 
-    serviceExecutor = Executors.newSingleThreadScheduledExecutor();
-    serviceExecutor.scheduleAtFixedRate(new HeartBeat(), 0, heartBeatPeriod, TimeUnit.SECONDS);
+    heartBeatingService = Executors.newSingleThreadScheduledExecutor();
+    startHeartBeating();
+  }
+
+  private void startHeartBeating() {
+    heartBeatingFuture = heartBeatingService.scheduleAtFixedRate(new HeartBeat(), 0, heartBeatPeriod, TimeUnit.SECONDS);
+  }
+
+  private void stopHeartBeating() {
+    heartBeatingFuture.cancel(true);
   }
 
   private void registerNode() throws Exception {
@@ -117,13 +128,37 @@ public class Node {
     @Override
     public void run() {
       if (heartBeating) {
+        log.info("Heart beat");
         try {
           curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
         } catch (Exception e) {
-          heartBeating = false;
           e.printStackTrace();
         }
+      } else {
+        log.info("Heart beat skipped");
       }
+    }
+  }
+
+  private class NodeCuratorStateListener implements CuratorStateListener {
+    @Override
+    public void connectionEstablished() {
+      startHeartBeating();
+    }
+
+    @Override
+    public void connectionSuspended() {
+      stopHeartBeating();
+    }
+
+    @Override
+    public void connectionRestored() {
+      startHeartBeating();
+    }
+
+    @Override
+    public void connectionLost() {
+      stopHeartBeating();
     }
   }
 }

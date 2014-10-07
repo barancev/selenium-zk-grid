@@ -1,5 +1,6 @@
 package ru.stqa.selenium.zkgrid.common;
 
+import com.google.common.collect.Lists;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -8,6 +9,8 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.slf4j.Logger;
+
+import java.util.List;
 
 public class Curator {
 
@@ -20,6 +23,7 @@ public class Curator {
   private Logger log;
   private String connectionString;
   private CuratorFramework client;
+  private List<CuratorStateListener> listeners = Lists.newArrayList();
 
   public Curator(String connectionString, Logger log) {
     this.connectionString = connectionString;
@@ -27,7 +31,7 @@ public class Curator {
   }
 
   public void start() {
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     client = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
     client.getConnectionStateListenable().addListener(new CuratorConnectionListener());
     client.start();
@@ -60,6 +64,14 @@ public class Curator {
     }
   }
 
+  public void setDataAsync(String path, String data) throws Exception {
+    if (client.checkExists().forPath(path) == null) {
+      client.create().creatingParentsIfNeeded().inBackground().forPath(path, data.getBytes());
+    } else {
+      client.setData().inBackground().forPath(path, data.getBytes());
+    }
+  }
+
   public DistributedBarrier createBarrier(String parent) throws Exception {
     String barrierPath = parent + "/barrier";
     client.create().creatingParentsIfNeeded().forPath(barrierPath);
@@ -73,25 +85,46 @@ public class Curator {
     new DistributedBarrier(client, barrierPath).removeBarrier();
   }
 
+  public void addStateListener(CuratorStateListener listener) {
+    listeners.add(listener);
+  }
+
+  public void removeStateListener(CuratorStateListener listener) {
+    listeners.remove(listener);
+  }
+
   private class CuratorConnectionListener implements ConnectionStateListener {
     @Override
     public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
       switch (connectionState) {
         case CONNECTED: {
           log.warn("Connection to ZK server established");
+          for (CuratorStateListener listener : listeners) {
+            listener.connectionEstablished();
+          }
           break;
         }
         case SUSPENDED: {
           log.warn("Connection to ZK server suspended");
+          for (CuratorStateListener listener : listeners) {
+            listener.connectionSuspended();
+          }
           break;
         }
         case RECONNECTED: {
           log.warn("Connection to ZK server reconnected");
+          for (CuratorStateListener listener : listeners) {
+            listener.connectionRestored();
+          }
           break;
         }
         case LOST: {
           log.warn("Connection to ZK server lost");
-          //client.close();
+          for (CuratorStateListener listener : listeners) {
+            listener.connectionLost();
+          }
+          client.close();
+          start();
           break;
         }
       }
