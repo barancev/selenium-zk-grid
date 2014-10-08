@@ -34,7 +34,7 @@ public class Client {
     Client wdClient = new Client("localhost:4444");
     wdClient.startNewSession(DesiredCapabilities.firefox());
     for (int i = 0; i < 30; i++) {
-      wdClient.get("http://localhost");
+      wdClient.get("http://localhost/");
       Thread.sleep(2000);
     }
     wdClient.quit();
@@ -42,6 +42,7 @@ public class Client {
 
   public Client(String connectionString) throws InterruptedException {
     curator = Curator.createCurator(connectionString, log);
+    curator.start();
   }
 
   private void startNewSession(final Capabilities capabilities) throws Exception {

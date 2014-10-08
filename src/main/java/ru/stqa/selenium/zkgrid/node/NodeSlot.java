@@ -1,13 +1,12 @@
 package ru.stqa.selenium.zkgrid.node;
 
 import org.openqa.selenium.remote.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotPath;
 import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotResponsePath;
@@ -15,11 +14,14 @@ import static ru.stqa.selenium.zkgrid.common.PathUtils.nodeSlotStatePath;
 
 public class NodeSlot {
 
+  private static Logger log = LoggerFactory.getLogger(NodeSlot.class);
+
   private Curator curator;
   private final SlotInfo slotInfo;
   private CommandHandler commandHandler;
 
   private final ScheduledExecutorService serviceExecutor;
+  private Future<?> currentCommand;
   private boolean executingCommand;
   private String sessionId;
 
@@ -36,18 +38,15 @@ public class NodeSlot {
   }
 
   public void processCommand(final Command cmd) throws Exception {
-    serviceExecutor.submit(new Callable<Void>() {
-      @Override
-      public Void call() throws Exception {
+    currentCommand = serviceExecutor.submit(new Runnable() {
+      public void run() {
         try {
           if (executingCommand) {
-            System.out.println("!!! Executing previous command, ignore");
-            return null;
+            log.warn("!!! Executing previous command, ignore");
           }
 
           if (sessionId != null && !sessionId.equals(cmd.getSessionId().toString())) {
-            System.out.println("!!! Command dispatched to a wrong slot");
-            return null;
+            log.warn("!!! Command dispatched to a wrong slot");
           }
 
           setBusyState();
@@ -57,13 +56,16 @@ public class NodeSlot {
           Response res = commandHandler.handleCommand(cmd);
 
           if (DriverCommand.NEW_SESSION.equals(cmd.getName())) {
-            if (ErrorCodes.SUCCESS_STRING.equals(res.getState())) {
+            log.info("NewSession command executed, " + res.getStatus());
+            if (ErrorCodes.SUCCESS == res.getStatus()) {
               sessionId = res.getSessionId();
+              log.info("sessionId = " + sessionId);
               setBusyState();
 
             } else {
               setFreeState();
             }
+
           } else if (DriverCommand.QUIT.equals(cmd.getName())) {
             if (ErrorCodes.SUCCESS_STRING.equals(res.getState())) {
               sessionId = null;
@@ -73,7 +75,8 @@ public class NodeSlot {
 
           curator.setData(nodeSlotResponsePath(slotInfo), new BeanToJsonConverter().convert(res));
           curator.clearBarrier(nodeSlotPath(slotInfo));
-          return null;
+        } catch (Exception e) {
+          e.printStackTrace();
         } finally {
           executingCommand = false;
         }
@@ -81,8 +84,28 @@ public class NodeSlot {
     });
   }
 
-  private void setBusyState() throws Exception {
-    curator.setData(nodeSlotStatePath(slotInfo), "busy");
+  public void destroySession() {
+    if (sessionId == null) {
+      log.info("No session on slot " + slotInfo);
+      return;
+    }
+    currentCommand.cancel(true);
+    serviceExecutor.submit(new Runnable() {
+      @Override
+      public void run() {
+        log.info("Killing session " + sessionId + " on slot " + slotInfo);
+        commandHandler.handleCommand(new Command(new SessionId(sessionId), DriverCommand.QUIT));
+      }
+    });
+
+  }
+
+  private void setBusyState() {
+    try {
+      curator.setData(nodeSlotStatePath(slotInfo), "busy");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private void setFreeState() {
@@ -97,4 +120,5 @@ public class NodeSlot {
       }
     }, 5, TimeUnit.SECONDS);
   }
+
 }

@@ -38,7 +38,6 @@ public class Node {
   private ScheduledFuture<?> heartBeatingFuture;
 
   private long heartBeatPeriod;
-  private boolean heartBeating = true;
   private CommandHandler commandHandler;
 
   public static void main(String[] args) throws Exception {
@@ -48,19 +47,21 @@ public class Node {
 
   public Node(NodeParameters params) throws Exception {
     this.params = params;
-    curator = Curator.createCurator(params.getHubConnectionString(), log);
-    curator.addStateListener(new NodeCuratorStateListener());
   }
 
   public void start() throws Exception {
+    heartBeatingService = Executors.newSingleThreadScheduledExecutor();
+
+    curator = Curator.createCurator(params.getHubConnectionString(), log);
+    curator.addStateListener(new NodeCuratorStateListener());
+    curator.start();
+
     sessions = new DefaultDriverSessions();
     commandHandler = new CommandHandler(sessions);
 
     registerNode();
-    registerSlots();
-
-    heartBeatingService = Executors.newSingleThreadScheduledExecutor();
     startHeartBeating();
+    registerSlots();
   }
 
   private void startHeartBeating() {
@@ -111,7 +112,7 @@ public class Node {
         String data = new String(nodeCache.getCurrentData().getData());
         Command cmd = new JsonToBeanConverter().convert(Command.class, data);
         log.info("Command received " + cmd);
-        log.info("Dispatched to slot " + slot);
+        log.info("Dispatched to slot " + slot.getSlotInfo());
         slot.processCommand(cmd);
       }
     };
@@ -119,23 +120,24 @@ public class Node {
     nodeCache.getListenable().addListener(nodesListener);
   }
 
+  private void destroyAllSessions() {
+    for (NodeSlot slot : slots.values()) {
+      slot.destroySession();
+    }
+  }
+
   private void unregisterFromHub() throws Exception {
-    heartBeating = false;
     curator.delete(nodePath(nodeId));
   }
 
   private class HeartBeat implements Runnable {
     @Override
     public void run() {
-      if (heartBeating) {
-        log.info("Heart beat");
-        try {
-          curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      } else {
-        log.info("Heart beat skipped");
+      log.trace("Heart beat");
+      try {
+        curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
+      } catch (Exception e) {
+        e.printStackTrace();
       }
     }
   }
@@ -159,6 +161,8 @@ public class Node {
     @Override
     public void connectionLost() {
       stopHeartBeating();
+      destroyAllSessions();
     }
   }
+
 }

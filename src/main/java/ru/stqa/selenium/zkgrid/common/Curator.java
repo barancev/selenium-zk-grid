@@ -16,7 +16,6 @@ public class Curator {
 
   public static Curator createCurator(String connectionString, Logger log) {
     Curator curator = new Curator(connectionString, log);
-    curator.start();
     return curator;
   }
 
