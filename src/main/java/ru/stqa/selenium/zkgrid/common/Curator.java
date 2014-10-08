@@ -45,8 +45,12 @@ public class Curator {
     return new String(client.getData().forPath(path));
   }
 
+  public boolean checkExists(String path) throws Exception {
+    return client.checkExists().forPath(path) != null;
+  }
+
   public void create(String path) throws Exception {
-    if (client.checkExists().forPath(path) == null) {
+    if (! checkExists(path)) {
       client.create().creatingParentsIfNeeded().forPath(path);
     }
   }
@@ -56,18 +60,10 @@ public class Curator {
   }
 
   public void setData(String path, String data) throws Exception {
-    if (client.checkExists().forPath(path) == null) {
-      client.create().creatingParentsIfNeeded().forPath(path, data.getBytes());
-    } else {
+    if (checkExists(path)) {
       client.setData().forPath(path, data.getBytes());
-    }
-  }
-
-  public void setDataAsync(String path, String data) throws Exception {
-    if (client.checkExists().forPath(path) == null) {
-      client.create().creatingParentsIfNeeded().inBackground().forPath(path, data.getBytes());
     } else {
-      client.setData().inBackground().forPath(path, data.getBytes());
+      client.create().creatingParentsIfNeeded().forPath(path, data.getBytes());
     }
   }
 
