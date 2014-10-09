@@ -86,7 +86,7 @@ public class NodeRegistry {
   public void addNode(String nodeId) throws Exception {
     nodes.put(nodeId, new NodeInfo(nodeId));
     startSlotRegistrationListener(nodeId);
-    log.info("Node added " + nodeId);
+    log.info("Node {} added to the registry", nodeId);
   }
 
   private void startNodesDeregistrationListener() throws Exception {
@@ -148,7 +148,7 @@ public class NodeRegistry {
       @Override
       public void nodeChanged() throws Exception {
         String data = new String(nodeCache.getCurrentData().getData());
-        log.info("Slot state changed to " + data);
+        log.info("Slot {} state changed to {}", slot, data);
         if ("busy".equals(data)) {
           slot.setBusy(true);
         } else {
@@ -167,7 +167,7 @@ public class NodeRegistry {
 
   public void removeNode(String nodeId) {
     nodes.remove(nodeId);
-    log.info("Node removed " + nodeId);
+    log.info("Node {} removed", nodeId);
   }
 
   public SlotInfo findFreeMatchingSlot(Capabilities capabilities) {
@@ -191,18 +191,18 @@ public class NodeRegistry {
             long timestamp = Long.parseLong(new String(client.getData().forPath(nodeHeartBeatPath(nodeId))));
             long now = System.currentTimeMillis();
             if (now - timestamp > deadTimeout) {
-              log.info("Node is dead " + nodeId);
+              log.info("Node {} is dead", nodeId);
               client.delete().deletingChildrenIfNeeded().forPath(nodePath(nodeId, ""));
 
             } else if (now - timestamp > lostTimeout) {
-              log.info("Node is lost " + nodeId);
+              log.info("Node {} is lost", nodeId);
 
             } else {
-              log.debug("Node is alive " + nodeId);
+              log.debug("Node {} is alive", nodeId);
             }
 
           } else {
-            log.info("Node has no heartbeat " + nodeId);
+            log.info("Node {} has no heartbeat", nodeId);
             curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
           }
         }

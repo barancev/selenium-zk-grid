@@ -60,7 +60,6 @@ public class NodeSlot {
             if (ErrorCodes.SUCCESS == res.getStatus()) {
               sessionId = res.getSessionId();
               log.info("sessionId = " + sessionId);
-              setBusyState();
 
             } else {
               setFreeState();
@@ -89,7 +88,9 @@ public class NodeSlot {
       log.info("No session on slot " + slotInfo);
       return;
     }
-    currentCommand.cancel(true);
+    if (executingCommand) {
+      currentCommand.cancel(true);
+    }
     serviceExecutor.submit(new Runnable() {
       @Override
       public void run() {
