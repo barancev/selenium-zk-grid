@@ -26,6 +26,7 @@ public class Node {
   private static Logger log = LoggerFactory.getLogger(Node.class);
 
   private NodeParameters params;
+  private final NodeConfiguration config;
 
   private String nodeId = UUID.randomUUID().toString();
   private Map<String, NodeSlot> slots = Maps.newHashMap();
@@ -47,6 +48,7 @@ public class Node {
 
   public Node(NodeParameters params) throws Exception {
     this.params = params;
+    this.config = params.getNodeConfiguration();
   }
 
   public void start() throws Exception {
@@ -68,12 +70,14 @@ public class Node {
   }
 
   private void createSlots() {
-    for (int i = 0; i < 10; i++) {
-      Capabilities capabilities = DesiredCapabilities.firefox();
-      String slotId = String.valueOf(i);
-      SlotInfo slotInfo = new SlotInfo(nodeId, slotId, capabilities);
-      NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
-      slots.put(slotInfo.getSlotId(), slot);
+    for (NodeConfiguration.SlotConfiguration slotConfig : config.slots) {
+      for (int count = 1; count <= slotConfig.maxInstances; count++) {
+        Capabilities capabilities = slotConfig.getCapabilities();
+        String slotId = String.valueOf(slotConfig.getName() + "-" + count);
+        SlotInfo slotInfo = new SlotInfo(nodeId, slotId, capabilities);
+        NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
+        slots.put(slotInfo.getSlotId(), slot);
+      }
     }
   }
 

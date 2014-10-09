@@ -1,0 +1,30 @@
+{
+    "clientInactivityTimeout" : 120,
+    "commandExecutionTimeout" : 60,
+    "slots" : [
+        {
+            "browserName" : "firefox",
+            "maxInstances" : 1
+        },
+        {
+            "name" : "firefox-aurora",
+            "browserName" : "firefox",
+            "browserBinary" : "C:\\Program Files (x86)\\Mozilla Firefox Aurora\\firefox.exe",
+            "maxInstances" : 1
+        },
+        {
+            "name" : "firefox-nightly",
+            "browserName" : "firefox",
+            "browserBinary" : "C:\\Program Files (x86)\\Mozilla Firefox Nightly\\firefox.exe",
+            "maxInstances" : 1
+        },
+        {
+            "browserName" : "chrome",
+            "maxInstances" : 1
+        },
+        {
+            "browserName" : "internet explorer",
+            "maxInstances" : 1
+        }
+    ]
+}

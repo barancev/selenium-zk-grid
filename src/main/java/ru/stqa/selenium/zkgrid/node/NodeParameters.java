@@ -20,7 +20,7 @@ public class NodeParameters {
     return hubConnectionString;
   }
 
-  public NodeConfiguration getCodeConfiguration() throws IOException {
+  public NodeConfiguration getNodeConfiguration() throws IOException {
     InputStream in;
     if (nodeConfig != null) {
       in = new FileInputStream(nodeConfig);
