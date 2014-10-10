@@ -30,6 +30,7 @@ public class NodeRegistry {
 
     private long lostTimeout = 5000;
     private long deadTimeout = 10000;
+    private Class<? extends CapabilityMatcher> capabilityMatcher = DefaultCapabilityMatcher.class;
 
     public Builder(Curator curator) {
       this.curator = curator;
@@ -45,11 +46,18 @@ public class NodeRegistry {
       return this;
     }
 
+    public Builder withCapabilityMatcher(String capabilityMatcherClass) throws ClassNotFoundException {
+      this.capabilityMatcher =
+          (Class<? extends CapabilityMatcher>) this.getClass().getClassLoader().loadClass(capabilityMatcherClass);
+      return this;
+    }
+
     public NodeRegistry create() throws Exception {
       log.debug("Creating NodeRegistry");
       NodeRegistry registry = new NodeRegistry(curator);
       registry.setLostTimeout(lostTimeout);
       registry.setDeadTimeout(deadTimeout);
+      registry.setCapabilityMatcher(capabilityMatcher.newInstance());
       registry.start();
       log.debug("NodeRegistry created");
       return registry;
@@ -60,6 +68,7 @@ public class NodeRegistry {
 
   private long lostTimeout = 5000;
   private long deadTimeout = 10000;
+  private CapabilityMatcher capabilityMatcher;
 
   private Map<String, NodeInfo> nodes = Maps.newHashMap();
 
@@ -75,6 +84,10 @@ public class NodeRegistry {
 
   private void setDeadTimeout(long deadTimeout) {
     this.deadTimeout = deadTimeout;
+  }
+
+  private void setCapabilityMatcher(CapabilityMatcher capabilityMatcher) {
+    this.capabilityMatcher = capabilityMatcher;
   }
 
   private void start() throws Exception {
@@ -170,10 +183,13 @@ public class NodeRegistry {
     log.info("Node {} removed", nodeId);
   }
 
-  public SlotInfo findFreeMatchingSlot(Capabilities capabilities) {
+  public SlotInfo findFreeMatchingSlot(Capabilities requiredCapabilities) {
     for (NodeInfo node : nodes.values()) {
       for (SlotInfo slot : node.getSlots()) {
-        if (!slot.isBusy() && slot.match(capabilities)) {
+        if (slot.isBusy()) {
+          continue;
+        }
+        if (capabilityMatcher.match(requiredCapabilities, slot.getCapabilities())) {
           return slot;
         }
       }

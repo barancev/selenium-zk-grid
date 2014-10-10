@@ -52,10 +52,6 @@ public class SlotInfo {
     this.busy = busy;
   }
 
-  public boolean match(Capabilities capabilities) {
-    return true;
-  }
-
   @Override
   public String toString() {
     return "{nodeId=" + nodeId + ", slotId=" + slotId + "}";
