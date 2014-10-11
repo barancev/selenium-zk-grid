@@ -189,7 +189,7 @@ public class NodeRegistry {
         if (slot.isBusy()) {
           continue;
         }
-        if (capabilityMatcher.match(requiredCapabilities, slot.getCapabilities())) {
+        if (capabilityMatcher.matches(slot.getCapabilities(), requiredCapabilities)) {
           return slot;
         }
       }
