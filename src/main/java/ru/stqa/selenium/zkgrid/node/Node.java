@@ -15,6 +15,7 @@ import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 import ru.stqa.selenium.zkgrid.common.StringSerializer;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -46,7 +47,7 @@ public class Node {
     node.start();
   }
 
-  public Node(NodeParameters params) throws Exception {
+  public Node(NodeParameters params) throws IOException {
     this.params = params;
     this.config = params.getNodeConfiguration();
   }

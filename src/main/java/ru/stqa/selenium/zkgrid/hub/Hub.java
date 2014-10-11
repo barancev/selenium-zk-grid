@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -30,6 +31,7 @@ public class Hub {
   }
 
   private HubParameters params;
+  private final HubConfiguration config;
 
   private SeleniumZooKeeperServer zooKeeperServer;
 
@@ -49,8 +51,9 @@ public class Hub {
     });
   }
 
-  public Hub(final HubParameters params) {
+  public Hub(final HubParameters params) throws IOException {
     this.params = params;
+    this.config = params.getHubConfiguration();
   }
 
   public void start() throws Exception {
@@ -60,9 +63,9 @@ public class Hub {
     startServer(properties);
     startCurator(properties.getProperty("clientPort"));
 
-    Map<String, Object> config = Maps.newHashMap();
-    config.put("heartBeatPeriod", params.getHeartBeatPeriod());
-    curator.setData(hubPath(), new Gson().toJson(config));
+    Map<String, Object> infoForNodes = Maps.newHashMap();
+    infoForNodes.put("heartBeatPeriod", config.heartBeatPeriod);
+    curator.setData(hubPath(), new Gson().toJson(infoForNodes));
 
     nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(10000).withDeadTimeout(20000).create();
     new RegistrationRequestProcessor(curator, nodeRegistry).start();
