@@ -13,6 +13,7 @@ import ru.stqa.selenium.zkgrid.common.Curator;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
@@ -64,10 +65,14 @@ public class Hub {
     startCurator(properties.getProperty("clientPort"));
 
     Map<String, Object> infoForNodes = Maps.newHashMap();
-    infoForNodes.put("heartBeatPeriod", config.heartBeatPeriod);
+    infoForNodes.put("heartBeatPeriod", TimeUnit.SECONDS.toMillis(config.heartBeatPeriod));
     curator.setData(hubPath(), new Gson().toJson(infoForNodes));
 
-    nodeRegistry = new NodeRegistry.Builder(curator).withLostTimeout(10000).withDeadTimeout(20000).create();
+    nodeRegistry = new NodeRegistry.Builder(curator)
+        .withLostTimeout(config.nodeLostTimeout, TimeUnit.SECONDS)
+        .withDeadTimeout(config.nodeDeadTimeout, TimeUnit.SECONDS)
+        .withCapabilityMatcher(config.capabilityMatcher)
+        .create();
     new RegistrationRequestProcessor(curator, nodeRegistry).start();
     new NewSessionRequestProcessor(curator, nodeRegistry).start();
   }

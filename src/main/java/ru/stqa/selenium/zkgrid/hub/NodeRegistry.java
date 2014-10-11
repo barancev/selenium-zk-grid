@@ -28,21 +28,21 @@ public class NodeRegistry {
 
     private Curator curator;
 
-    private long lostTimeout = 5000;
-    private long deadTimeout = 10000;
-    private Class<? extends CapabilityMatcher> capabilityMatcher = DefaultCapabilityMatcher.class;
+    private long lostTimeout;
+    private long deadTimeout;
+    private Class<? extends CapabilityMatcher> capabilityMatcher;
 
     public Builder(Curator curator) {
       this.curator = curator;
     }
 
-    public Builder withLostTimeout(long lostTimeout) {
-      this.lostTimeout = lostTimeout;
+    public Builder withLostTimeout(long lostTimeout, TimeUnit timeUnit) {
+      this.lostTimeout = timeUnit.toMillis(lostTimeout);
       return this;
     }
 
-    public Builder withDeadTimeout(long deadTimeout) {
-      this.deadTimeout = deadTimeout;
+    public Builder withDeadTimeout(long deadTimeout, TimeUnit timeUnit) {
+      this.deadTimeout = timeUnit.toMillis(deadTimeout);
       return this;
     }
 

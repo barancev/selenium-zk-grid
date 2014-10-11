@@ -1,3 +1,6 @@
 {
-    "heartBeatPeriod" : 10
+    "heartBeatPeriod" : 2,
+    "nodeLostTimeout" : 10,
+    "nodeDeadTimeout" : 20,
+    "capabilityMatcher": "ru.stqa.selenium.zkgrid.hub.DefaultCapabilityMatcher"
 }

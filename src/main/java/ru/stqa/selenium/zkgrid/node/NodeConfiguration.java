@@ -12,8 +12,9 @@ import java.util.List;
 
 public class NodeConfiguration {
 
-  long clientInactivityTimeout;
-  long commandExecutionTimeout;
+  long clientInactivityTimeout = 120;
+  long commandExecutionTimeout = 60;
+
   List<SlotConfiguration> slots;
 
   static class SlotConfiguration {
