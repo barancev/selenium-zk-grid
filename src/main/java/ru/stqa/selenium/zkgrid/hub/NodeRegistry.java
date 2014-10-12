@@ -1,5 +1,6 @@
 package ru.stqa.selenium.zkgrid.hub;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.*;
@@ -65,8 +66,8 @@ public class NodeRegistry {
 
   private Curator curator;
 
-  private long lostTimeout = 5000;
-  private long deadTimeout = 10000;
+  private long lostTimeout;
+  private long deadTimeout;
   private CapabilityMatcher capabilityMatcher;
 
   private Map<String, NodeInfo> nodes = Maps.newHashMap();
@@ -75,6 +76,8 @@ public class NodeRegistry {
 
   private NodeRegistry(Curator curator) {
     this.curator = curator;
+
+    serviceExecutor = Executors.newSingleThreadScheduledExecutor();
   }
 
   private void setLostTimeout(long lostTimeout) {
@@ -91,14 +94,43 @@ public class NodeRegistry {
 
   private void start() throws Exception {
     startNodesDeregistrationListener();
-    serviceExecutor = Executors.newSingleThreadScheduledExecutor();
-    serviceExecutor.scheduleAtFixedRate(new NodeHeartBeatWatcher(), 0, lostTimeout / 2, TimeUnit.MILLISECONDS);
   }
 
   public void addNode(String nodeId) throws Exception {
     nodes.put(nodeId, new NodeInfo(nodeId));
+    startNodeHeartBeatWatcher(nodeId);
     startSlotRegistrationListener(nodeId);
     log.info("Node {} added to the registry", nodeId);
+  }
+
+  private void startNodeHeartBeatWatcher(final String nodeId) {
+    serviceExecutor.scheduleAtFixedRate(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          if (curator.checkExists(nodeHeartBeatPath(nodeId))) {
+            long timestamp = Long.parseLong(curator.getDataForPath(nodeHeartBeatPath(nodeId)));
+            long now = System.currentTimeMillis();
+            if (now - timestamp > deadTimeout) {
+              log.info("Node {} is dead", nodeId);
+              curator.delete(nodePath(nodeId, ""));
+
+            } else if (now - timestamp > lostTimeout) {
+              log.info("Node {} is lost", nodeId);
+
+            } else {
+              log.debug("Node {} is alive", nodeId);
+            }
+
+          } else {
+            log.info("Node {} has no heartbeat", nodeId);
+            curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
+          }
+        } catch (Exception ex) {
+          Throwables.propagate(ex);
+        }
+      }
+    }, lostTimeout/2, lostTimeout/2, TimeUnit.MILLISECONDS);
   }
 
   private void startNodesDeregistrationListener() throws Exception {
@@ -196,34 +228,4 @@ public class NodeRegistry {
     return null;
   }
 
-  private class NodeHeartBeatWatcher implements Runnable {
-    @Override
-    public void run() {
-      try {
-        CuratorFramework client = curator.getClient();
-        for (String nodeId : nodes.keySet()) {
-          if (client.checkExists().forPath(nodeHeartBeatPath(nodeId)) != null) {
-            long timestamp = Long.parseLong(new String(client.getData().forPath(nodeHeartBeatPath(nodeId))));
-            long now = System.currentTimeMillis();
-            if (now - timestamp > deadTimeout) {
-              log.info("Node {} is dead", nodeId);
-              client.delete().deletingChildrenIfNeeded().forPath(nodePath(nodeId, ""));
-
-            } else if (now - timestamp > lostTimeout) {
-              log.info("Node {} is lost", nodeId);
-
-            } else {
-              log.debug("Node {} is alive", nodeId);
-            }
-
-          } else {
-            log.info("Node {} has no heartbeat", nodeId);
-            curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
-          }
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-  }
 }
