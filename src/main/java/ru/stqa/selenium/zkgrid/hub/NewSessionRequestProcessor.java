@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.CapabilitiesSerializer;
 import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.SlotAllocationResponse;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
@@ -38,15 +39,15 @@ public class NewSessionRequestProcessor {
     public void consumeMessage(Capabilities capabilities) throws Exception {
       log.info("Request for new session " + capabilities);
       String clientId = (String) capabilities.getCapability("zk-grid.clientId");
-      SlotInfo slot = nodeRegistry.findFreeMatchingSlot(capabilities);
-      if (slot != null) {
-        log.info("Slot found " + slot.getSlotId());
-        curator.setData(clientAllocatedSlotPath(clientId), new BeanToJsonConverter().convert(slot));
-        slot.setBusy(true);
+      SlotAllocationResponse response = nodeRegistry.findFreeMatchingSlot(capabilities);
+      if (response.getStatus() == SlotAllocationResponse.Status.OK) {
+        log.info("Slot found " + response.getSlotInfo());
+        curator.setData(nodeSlotStatePath(response.getSlotInfo()), "busy");
+        response.getSlotInfo().setBusy(true);
       } else {
         log.info("No slot found");
-        curator.setData(clientAllocatedSlotPath(clientId), "{}");
       }
+      curator.setData(clientAllocatedSlotPath(clientId), new BeanToJsonConverter().convert(response));
       curator.clearBarrier(clientPath(clientId));
     }
 

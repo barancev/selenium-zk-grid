@@ -1,7 +1,6 @@
 package ru.stqa.selenium.zkgrid.common;
 
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.remote.DesiredCapabilities;
 
 public class SlotInfo {
 

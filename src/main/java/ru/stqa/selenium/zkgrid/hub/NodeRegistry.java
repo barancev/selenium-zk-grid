@@ -11,6 +11,7 @@ import org.openqa.selenium.remote.JsonToBeanConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.SlotAllocationResponse;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.Map;
@@ -233,18 +234,26 @@ public class NodeRegistry {
     return nodes.get(nodeId);
   }
 
-  public SlotInfo findFreeMatchingSlot(Capabilities requiredCapabilities) {
+  public SlotAllocationResponse findFreeMatchingSlot(Capabilities requiredCapabilities) {
+    int matchingSlots = 0;
     for (NodeInfo node : nodes.values()) {
       for (SlotInfo slot : node.getSlots()) {
-        if (slot.isBusy()) {
-          continue;
-        }
         if (capabilityMatcher.matches(slot.getCapabilities(), requiredCapabilities)) {
-          return slot;
+          if (!slot.isBusy()) {
+            return new SlotAllocationResponse(SlotAllocationResponse.Status.OK, slot);
+          } else {
+            matchingSlots++;
+          }
         }
       }
     }
-    return null;
+    if (matchingSlots == 0) {
+      return new SlotAllocationResponse(SlotAllocationResponse.Status.NO_MATCHING_SLOT, null,
+          "There are no matching slots found");
+    } else {
+      return new SlotAllocationResponse(SlotAllocationResponse.Status.NO_FREE_SLOT, null,
+          "There are "+matchingSlots+" matching slots, but they are all busy");
+    }
   }
 
 }

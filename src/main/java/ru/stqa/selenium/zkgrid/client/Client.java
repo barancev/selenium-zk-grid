@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.CapabilitiesSerializer;
 import ru.stqa.selenium.zkgrid.common.Curator;
+import ru.stqa.selenium.zkgrid.common.SlotAllocationResponse;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class Client {
   public static void main(String[] args) throws Exception {
     Client wdClient = new Client("localhost:4444");
     DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-    //capabilities.setVersion("32");
+    capabilities.setVersion("32");
     wdClient.startNewSession(capabilities);
     for (int i = 0; i < 1; i++) {
       wdClient.get("http://localhost/");
@@ -61,10 +62,14 @@ public class Client {
       throw new Error("Slot allocation timeout");
     }
 
-    slot = new JsonToBeanConverter().convert(SlotInfo.class, curator.getDataForPath(clientAllocatedSlotPath(clientId)));
-    log.info("Slot allocated " + slot);
+    SlotAllocationResponse response = new JsonToBeanConverter().convert(
+        SlotAllocationResponse.class, curator.getDataForPath(clientAllocatedSlotPath(clientId)));
 
-    if (slot.getNodeId() == null) {
+    if (response.getStatus() == SlotAllocationResponse.Status.OK) {
+      slot = response.getSlotInfo();
+      log.info("Slot allocated " + response.getSlotInfo());
+    } else {
+      log.info(response.getMessage());
       System.exit(0);
     }
 
