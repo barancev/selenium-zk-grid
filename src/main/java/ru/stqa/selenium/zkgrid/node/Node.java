@@ -91,7 +91,7 @@ public class Node {
       public void run() {
         if (heartBeatingFuture == null) {
           heartBeatingFuture = serviceExecutor.scheduleAtFixedRate(
-              new HeartBeat(), 0, heartBeatPeriod, TimeUnit.SECONDS);
+              new HeartBeat(), 0, heartBeatPeriod, TimeUnit.MILLISECONDS);
         }
       }
     });

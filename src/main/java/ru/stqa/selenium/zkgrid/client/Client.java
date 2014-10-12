@@ -32,8 +32,10 @@ public class Client {
 
   public static void main(String[] args) throws Exception {
     Client wdClient = new Client("localhost:4444");
-    wdClient.startNewSession(DesiredCapabilities.firefox());
-    for (int i = 0; i < 30; i++) {
+    DesiredCapabilities capabilities = DesiredCapabilities.firefox();
+    //capabilities.setVersion("32");
+    wdClient.startNewSession(capabilities);
+    for (int i = 0; i < 1; i++) {
       wdClient.get("http://localhost/");
       Thread.sleep(2000);
     }
@@ -61,6 +63,10 @@ public class Client {
 
     slot = new JsonToBeanConverter().convert(SlotInfo.class, curator.getDataForPath(clientAllocatedSlotPath(clientId)));
     log.info("Slot allocated " + slot);
+
+    if (slot.getNodeId() == null) {
+      System.exit(0);
+    }
 
     Response res = sendCommand(new Command(null, DriverCommand.NEW_SESSION, new HashMap<String, Object>(){{
       put("desiredCapabilities", capabilities);

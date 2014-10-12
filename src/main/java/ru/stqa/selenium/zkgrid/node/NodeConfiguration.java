@@ -20,7 +20,7 @@ public class NodeConfiguration {
   static class SlotConfiguration {
     String name;
     String browserName;
-    String browserVersion;
+    String version;
 
     String browserBinary;
 
@@ -35,8 +35,8 @@ public class NodeConfiguration {
     public Capabilities getCapabilities() {
       DesiredCapabilities capabilities = new DesiredCapabilities();
       capabilities.setCapability(CapabilityType.BROWSER_NAME, browserName);
-      if (browserVersion != null) {
-        capabilities.setCapability(CapabilityType.VERSION, browserVersion);
+      if (version != null) {
+        capabilities.setCapability(CapabilityType.VERSION, version);
       }
       if (browserBinary != null) {
         if ("firefox".equals(browserName)) {

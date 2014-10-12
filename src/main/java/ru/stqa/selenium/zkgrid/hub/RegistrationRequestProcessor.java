@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.StringSerializer;
 
-import static ru.stqa.selenium.zkgrid.common.PathUtils.nodePath;
-
 public class RegistrationRequestProcessor {
 
   private static Logger log = LoggerFactory.getLogger(RegistrationRequestProcessor.class);

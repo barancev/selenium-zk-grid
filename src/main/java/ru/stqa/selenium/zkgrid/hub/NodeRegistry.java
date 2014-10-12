@@ -148,6 +148,7 @@ public class NodeRegistry {
 
           } else {
             log.warn("Node {} has no heartbeat", nodeId);
+            curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
           }
         } catch (Exception ex) {
           throw Throwables.propagate(ex);
@@ -231,7 +232,6 @@ public class NodeRegistry {
   private NodeInfo getNode(String nodeId) {
     return nodes.get(nodeId);
   }
-
 
   public SlotInfo findFreeMatchingSlot(Capabilities requiredCapabilities) {
     for (NodeInfo node : nodes.values()) {
