@@ -2,7 +2,6 @@ package ru.stqa.selenium.zkgrid.node;
 
 import com.google.common.collect.Maps;
 import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
-import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
@@ -63,7 +62,7 @@ public class Node {
     
     createSlots();
 
-    registerNode();
+    registerToTheHub();
     startHeartBeating();
     registerSlots();
 
@@ -101,7 +100,7 @@ public class Node {
     }
   }
 
-  private void registerNode() {
+  private void registerToTheHub() {
     serviceExecutor.submit(new Runnable() {
       @Override
       public void run() {
@@ -138,41 +137,10 @@ public class Node {
       serviceExecutor.submit(new Runnable() {
         @Override
         public void run() {
-          SlotInfo slotInfo = slot.getSlotInfo();
-          log.info("Registering slot {} to the hub", slotInfo);
-          try {
-            if (curator.checkExists(nodeSlotPath(slotInfo))) {
-              log.info("Slot {} is already registered to the hub", slotInfo);
-              return;
-            }
-            curator.setData(nodeSlotPath(slotInfo), new BeanToJsonConverter().convert(slotInfo.getCapabilities()));
-            startCommandListener(slot);
-          } catch (Exception ex) {
-            throw new Error("Node can't register slot " + slotInfo, ex);
-          }
-          log.info("Slot {} registered to the hub", slotInfo);
+          slot.registerToTheHub();
         }
       });
     }
-  }
-
-  private void startCommandListener(final NodeSlot slot) throws Exception {
-    final SlotInfo slotInfo = slot.getSlotInfo();
-    final NodeCache nodeCache = new NodeCache(curator.getClient(), nodeSlotCommandPath(slotInfo), false);
-    nodeCache.start();
-
-    NodeCacheListener nodesListener = new NodeCacheListener () {
-      @Override
-      public void nodeChanged() throws Exception {
-        String data = new String(nodeCache.getCurrentData().getData());
-        Command cmd = new JsonToBeanConverter().convert(Command.class, data);
-        log.info("Command received {}", cmd);
-        log.info("Dispatched to slot {}", slot.getSlotInfo());
-        slot.processCommand(cmd);
-      }
-    };
-
-    nodeCache.getListenable().addListener(nodesListener);
   }
 
   private void destroyAllSessions() {
@@ -200,7 +168,7 @@ public class Node {
   private class NodeCuratorStateListener implements CuratorStateListener {
     @Override
     public void connectionEstablished() {
-      registerNode();
+      registerToTheHub();
       startHeartBeating();
       registerSlots();
     }
