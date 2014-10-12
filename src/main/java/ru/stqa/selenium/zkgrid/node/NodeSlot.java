@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
-import ru.stqa.selenium.zkgrid.hub.CapabilityMatcher;
 
 import java.util.concurrent.*;
 
@@ -18,7 +17,6 @@ public class NodeSlot {
   private static Logger log = LoggerFactory.getLogger(NodeSlot.class);
 
   private Curator curator;
-  private NodeConfiguration.SlotConfiguration slotConfig;
   private final SlotInfo slotInfo;
   private CommandHandler commandHandler;
 
