@@ -25,7 +25,6 @@ public class NodeRegistry {
   private static Logger log = LoggerFactory.getLogger(NodeRegistry.class);
 
   public static class Builder {
-
     private Curator curator;
 
     private long lostTimeout;

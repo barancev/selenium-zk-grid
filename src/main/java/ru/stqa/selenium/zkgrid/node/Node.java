@@ -69,13 +69,17 @@ public class Node {
     curator.addStateListener(new NodeCuratorStateListener());
   }
 
-  private void createSlots() {
+  private void createSlots() throws Exception {
     for (NodeConfiguration.SlotConfiguration slotConfig : config.slots) {
       for (int count = 1; count <= slotConfig.maxInstances; count++) {
         Capabilities capabilities = slotConfig.getCapabilities();
         String slotId = String.valueOf(slotConfig.getName() + "-" + count);
         SlotInfo slotInfo = new SlotInfo(nodeId, slotId, capabilities);
-        NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
+        NodeSlot slot = new NodeSlot.Builder(curator, slotInfo, commandHandler)
+            .withCommandExecutionTimeout(slotConfig.commandExecutionTimeout > 0
+                ? slotConfig.commandExecutionTimeout
+                : config.commandExecutionTimeout, TimeUnit.SECONDS)
+            .create();
         slots.put(slotInfo.getSlotId(), slot);
       }
     }

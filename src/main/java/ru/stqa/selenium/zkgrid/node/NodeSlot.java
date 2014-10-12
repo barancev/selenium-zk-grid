@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
+import ru.stqa.selenium.zkgrid.hub.CapabilityMatcher;
 
 import java.util.concurrent.*;
 
@@ -17,20 +18,56 @@ public class NodeSlot {
   private static Logger log = LoggerFactory.getLogger(NodeSlot.class);
 
   private Curator curator;
+  private NodeConfiguration.SlotConfiguration slotConfig;
   private final SlotInfo slotInfo;
   private CommandHandler commandHandler;
 
   private final ScheduledExecutorService serviceExecutor;
-  private Future<?> currentCommand;
+  private final ExecutorService commandExecutor;
+
+  private Future<Response> currentCommand;
   private boolean executingCommand;
   private String sessionId;
+  private long commandExecutionTimeout;
 
-  public NodeSlot(Curator curator, SlotInfo slotInfo, CommandHandler commandHandler) {
+  public static class Builder {
+    private Curator curator;
+    private SlotInfo slotInfo;
+    private CommandHandler commandHandler;
+
+    private long commandExecutionTimeout;
+
+    public Builder(Curator curator, SlotInfo slotInfo, CommandHandler commandHandler) {
+      this.curator = curator;
+      this.slotInfo = slotInfo;
+      this.commandHandler = commandHandler;
+    }
+
+    public Builder withCommandExecutionTimeout(long lostTimeout, TimeUnit timeUnit) {
+      this.commandExecutionTimeout = timeUnit.toMillis(lostTimeout);
+      return this;
+    }
+
+    public NodeSlot create() throws Exception {
+      log.debug("Creating NodeSlot");
+      NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
+      slot.setCommandExecutionTimeout(commandExecutionTimeout);
+      log.debug("NodeSlot created");
+      return slot;
+    }
+  }
+
+  private NodeSlot(Curator curator, SlotInfo slotInfo, CommandHandler commandHandler) {
     this.curator = curator;
     this.slotInfo = slotInfo;
     this.commandHandler = commandHandler;
 
     serviceExecutor = Executors.newSingleThreadScheduledExecutor();
+    commandExecutor = Executors.newSingleThreadExecutor();
+  }
+
+  public void setCommandExecutionTimeout(long commandExecutionTimeout) {
+    this.commandExecutionTimeout = commandExecutionTimeout;
   }
 
   public SlotInfo getSlotInfo() {
@@ -76,18 +113,32 @@ public class NodeSlot {
   }
 
   private void processCommand(final Command cmd) throws Exception {
-    currentCommand = serviceExecutor.submit(new Runnable() {
+    serviceExecutor.submit(new Runnable() {
       public void run() {
         try {
           if (sessionId != null && !sessionId.equals(cmd.getSessionId().toString())) {
             log.warn("!!! Command dispatched to a wrong slot");
           }
 
-          setBusyState();
-
           executingCommand = true;
 
-          Response res = commandHandler.handleCommand(cmd);
+          setBusyState();
+
+          currentCommand = commandExecutor.submit(new Callable<Response>() {
+            @Override
+            public Response call() throws Exception {
+              return commandHandler.handleCommand(cmd);
+            }
+          });
+
+          Response res;
+          try {
+            res = currentCommand.get(commandExecutionTimeout, TimeUnit.MILLISECONDS);
+          } catch (TimeoutException to) {
+            res = new Response();
+            res.setStatus(ErrorCodes.TIMEOUT);
+            res.setValue(to);
+          }
 
           if (DriverCommand.NEW_SESSION.equals(cmd.getName())) {
             log.info("NewSession command executed, " + res.getStatus());
@@ -110,6 +161,7 @@ public class NodeSlot {
           e.printStackTrace();
         } finally {
           executingCommand = false;
+          currentCommand = null;
         }
       }
     });
@@ -120,14 +172,14 @@ public class NodeSlot {
       log.info("No session on slot {}", slotInfo);
       return;
     }
-    if (executingCommand) {
+    if (executingCommand && currentCommand != null) {
       currentCommand.cancel(true);
     }
-    serviceExecutor.submit(new Runnable() {
+    commandExecutor.submit(new Runnable() {
       @Override
       public void run() {
         log.info("Killing session {} on slot {}", sessionId, slotInfo);
-        Response res = commandHandler.handleCommand(new Command(new SessionId(sessionId), DriverCommand.QUIT));
+        commandHandler.handleCommand(new Command(new SessionId(sessionId), DriverCommand.QUIT));
         sessionId = null;
       }
     });
