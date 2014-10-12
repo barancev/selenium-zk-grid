@@ -11,7 +11,6 @@ import org.openqa.selenium.remote.JsonToBeanConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.stqa.selenium.zkgrid.common.Curator;
-import ru.stqa.selenium.zkgrid.common.NodeInfo;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.Map;

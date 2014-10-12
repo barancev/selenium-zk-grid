@@ -1,7 +1,8 @@
-package ru.stqa.selenium.zkgrid.common;
+package ru.stqa.selenium.zkgrid.hub;
 
 import com.google.common.collect.Maps;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.Collection;
 import java.util.Map;
