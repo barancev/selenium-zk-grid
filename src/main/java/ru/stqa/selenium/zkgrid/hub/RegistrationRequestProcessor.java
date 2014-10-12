@@ -34,8 +34,7 @@ public class RegistrationRequestProcessor {
     @Override
     public void consumeMessage(String nodeId) throws Exception {
       log.info("Registration request from " + nodeId);
-      nodeRegistry.addNode(nodeId);
-      curator.clearBarrier(nodePath(nodeId));
+      nodeRegistry.registerNode(nodeId);
     }
 
     @Override

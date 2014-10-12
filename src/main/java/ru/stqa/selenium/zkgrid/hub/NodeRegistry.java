@@ -14,9 +14,7 @@ import ru.stqa.selenium.zkgrid.common.Curator;
 import ru.stqa.selenium.zkgrid.common.SlotInfo;
 
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static ru.stqa.selenium.zkgrid.common.PathUtils.*;
 
@@ -70,6 +68,7 @@ public class NodeRegistry {
   private CapabilityMatcher capabilityMatcher;
 
   private Map<String, NodeInfo> nodes = Maps.newHashMap();
+  private Map<String, Future<?>> heartBeaters = Maps.newHashMap();
 
   private ScheduledExecutorService serviceExecutor;
 
@@ -95,15 +94,42 @@ public class NodeRegistry {
     startNodesDeregistrationListener();
   }
 
-  public void addNode(String nodeId) throws Exception {
-    nodes.put(nodeId, new NodeInfo(nodeId));
-    startNodeHeartBeatWatcher(nodeId);
-    startSlotRegistrationListener(nodeId);
-    log.info("Node {} added to the registry", nodeId);
+  public void registerNode(final String nodeId) {
+    serviceExecutor.submit(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          nodes.put(nodeId, new NodeInfo(nodeId));
+          startNodeHeartBeatWatcher(nodeId);
+          startSlotRegistrationListener(nodeId);
+          log.info("Node {} added to the registry", nodeId);
+          curator.clearBarrier(nodePath(nodeId));
+        } catch (Exception ex) {
+          throw Throwables.propagate(ex);
+        }
+      }
+    });
+  }
+
+  public void unregisterNode(final String nodeId) {
+    serviceExecutor.submit(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          nodes.remove(nodeId);
+          heartBeaters.get(nodeId).cancel(false);
+          heartBeaters.remove(nodeId);
+          curator.delete(nodePath(nodeId, ""));
+          log.info("Node {} removed from the registry", nodeId);
+        } catch (Exception ex) {
+          throw Throwables.propagate(ex);
+        }
+      }
+    });
   }
 
   private void startNodeHeartBeatWatcher(final String nodeId) {
-    serviceExecutor.scheduleAtFixedRate(new Runnable() {
+    Future<?> heartBeater = serviceExecutor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
         try {
@@ -111,8 +137,7 @@ public class NodeRegistry {
             long timestamp = Long.parseLong(curator.getDataForPath(nodeHeartBeatPath(nodeId)));
             long now = System.currentTimeMillis();
             if (now - timestamp > deadTimeout) {
-              log.info("Node {} is dead", nodeId);
-              curator.delete(nodePath(nodeId, ""));
+              unregisterNode(nodeId);
 
             } else if (now - timestamp > lostTimeout) {
               log.info("Node {} is lost", nodeId);
@@ -122,14 +147,14 @@ public class NodeRegistry {
             }
 
           } else {
-            log.info("Node {} has no heartbeat", nodeId);
-            curator.setData(nodeHeartBeatPath(nodeId), String.valueOf(System.currentTimeMillis()));
+            log.warn("Node {} has no heartbeat", nodeId);
           }
         } catch (Exception ex) {
-          Throwables.propagate(ex);
+          throw Throwables.propagate(ex);
         }
       }
-    }, lostTimeout/2, lostTimeout/2, TimeUnit.MILLISECONDS);
+    }, lostTimeout / 2, lostTimeout / 2, TimeUnit.MILLISECONDS);
+    heartBeaters.put(nodeId, heartBeater);
   }
 
   private void startNodesDeregistrationListener() throws Exception {
@@ -139,7 +164,7 @@ public class NodeRegistry {
         switch (event.getType()) {
           case CHILD_REMOVED: {
             String nodeId = ZKPaths.getNodeFromPath(event.getData().getPath());
-            removeNode(nodeId);
+            unregisterNode(nodeId);
             break;
           }
         }
@@ -207,11 +232,6 @@ public class NodeRegistry {
     return nodes.get(nodeId);
   }
 
-
-  public void removeNode(String nodeId) {
-    nodes.remove(nodeId);
-    log.info("Node {} removed", nodeId);
-  }
 
   public SlotInfo findFreeMatchingSlot(Capabilities requiredCapabilities) {
     for (NodeInfo node : nodes.values()) {

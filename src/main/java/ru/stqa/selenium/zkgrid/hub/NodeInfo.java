@@ -17,17 +17,17 @@ public class NodeInfo {
     this.nodeId = nodeId;
   }
 
-  public SlotInfo addSlot(String slotId, DesiredCapabilities capabilities) {
+  public synchronized SlotInfo addSlot(String slotId, DesiredCapabilities capabilities) {
     SlotInfo slot = new SlotInfo(nodeId, slotId, capabilities);
     slots.put(slotId, slot);
     return slot;
   }
 
-  public void removeSlot(String slotId) {
+  public synchronized void removeSlot(String slotId) {
     slots.remove(slotId);
   }
 
-  public Collection<SlotInfo> getSlots() {
+  public synchronized Collection<SlotInfo> getSlots() {
     return slots.values();
   }
 }
