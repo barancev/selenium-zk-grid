@@ -47,7 +47,7 @@ public class DefaultCapabilityMatcher implements CapabilityMatcher {
             }
           }
         } else {
-          if (!requiredCapabilities.getCapability(key).equals(requiredValue)) {
+          if (!providedCapabilities.getCapability(key).equals(requiredValue)) {
             return false;
           }
         }
