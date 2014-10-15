@@ -26,8 +26,6 @@ public class NodeConfiguration {
 
     long maxInstances;
 
-    long commandExecutionTimeout;
-
     public String getName() {
       return name != null ? name : browserName;
     }

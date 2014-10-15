@@ -9,7 +9,7 @@ public class Client implements Runnable {
   private Capabilities capabilities;
 
   public static void main(String[] args) throws Exception {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
       new Thread(new Client(DesiredCapabilities.firefox())).start();
     }
   }
@@ -24,7 +24,7 @@ public class Client implements Runnable {
       WebDriver driver = new RemoteWebDriver(new CuratorCommandExecutor("localhost:4444"), capabilities);
       for (int i = 0; i < 30; i++) {
         driver.get("http://localhost/");
-        Thread.sleep(2000);
+        Thread.sleep(20000);
       }
       driver.quit();
     } catch (InterruptedException e) {

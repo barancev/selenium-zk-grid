@@ -76,9 +76,8 @@ public class Node {
         String slotId = String.valueOf(slotConfig.getName() + "-" + count);
         SlotInfo slotInfo = new SlotInfo(nodeId, slotId, capabilities);
         NodeSlot slot = new NodeSlot.Builder(curator, slotInfo, commandHandler)
-            .withCommandExecutionTimeout(slotConfig.commandExecutionTimeout > 0
-                ? slotConfig.commandExecutionTimeout
-                : config.commandExecutionTimeout, TimeUnit.SECONDS)
+            .withCommandExecutionTimeout(config.commandExecutionTimeout, TimeUnit.SECONDS)
+            .withClientInactivityTimeout(config.clientInactivityTimeout, TimeUnit.SECONDS)
             .create();
         slots.put(slotInfo.getSlotId(), slot);
       }

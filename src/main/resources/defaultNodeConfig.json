@@ -1,5 +1,5 @@
 {
-    "clientInactivityTimeout" : 120,
+    "clientInactivityTimeout" : 10,
     "commandExecutionTimeout" : 60,
     "slots" : [
         {

@@ -27,6 +27,8 @@ public class NodeSlot {
   private boolean executingCommand;
   private String sessionId;
   private long commandExecutionTimeout;
+  private long clientInactivityTimeout;
+  private Future<?> clientInactivityWatcher;
 
   public static class Builder {
     private Curator curator;
@@ -34,6 +36,7 @@ public class NodeSlot {
     private CommandHandler commandHandler;
 
     private long commandExecutionTimeout;
+    private long clientInactivityTimeout;
 
     public Builder(Curator curator, SlotInfo slotInfo, CommandHandler commandHandler) {
       this.curator = curator;
@@ -46,10 +49,16 @@ public class NodeSlot {
       return this;
     }
 
+    public Builder withClientInactivityTimeout(long inactivityTimeout, TimeUnit timeUnit) {
+      this.clientInactivityTimeout = timeUnit.toMillis(inactivityTimeout);
+      return this;
+    }
+
     public NodeSlot create() throws Exception {
       log.debug("Creating NodeSlot");
       NodeSlot slot = new NodeSlot(curator, slotInfo, commandHandler);
       slot.setCommandExecutionTimeout(commandExecutionTimeout);
+      slot.setClientInactivityTimeout(clientInactivityTimeout);
       log.debug("NodeSlot created");
       return slot;
     }
@@ -66,6 +75,10 @@ public class NodeSlot {
 
   public void setCommandExecutionTimeout(long commandExecutionTimeout) {
     this.commandExecutionTimeout = commandExecutionTimeout;
+  }
+
+  public void setClientInactivityTimeout(long clientInactivityTimeout) {
+    this.clientInactivityTimeout = clientInactivityTimeout;
   }
 
   public SlotInfo getSlotInfo() {
@@ -101,8 +114,7 @@ public class NodeSlot {
 
         String data = new String(nodeCache.getCurrentData().getData());
         Command cmd = new JsonToBeanConverter().convert(Command.class, data);
-        log.info("Command received {}", cmd);
-        log.info("Dispatched to slot {}", slotInfo);
+        log.info("Slot {} received a command {}", slotInfo, cmd);
         processCommand(cmd);
       }
     };
@@ -111,6 +123,9 @@ public class NodeSlot {
   }
 
   private void processCommand(final Command cmd) throws Exception {
+    if (clientInactivityWatcher != null) {
+      clientInactivityWatcher.cancel(false);
+    }
     serviceExecutor.submit(new Runnable() {
       public void run() {
         try {
@@ -155,6 +170,14 @@ public class NodeSlot {
 
           curator.setData(nodeSlotResponsePath(slotInfo), new BeanToJsonConverter().convert(res));
           curator.clearBarrier(nodeSlotPath(slotInfo));
+
+          clientInactivityWatcher = serviceExecutor.schedule(
+              new Runnable() {
+                @Override
+                public void run() {
+                  destroySession();
+                }
+              }, clientInactivityTimeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
