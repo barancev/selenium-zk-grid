@@ -5,6 +5,7 @@ import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
 import org.apache.curator.framework.recipes.queue.DistributedQueue;
 import org.apache.curator.framework.recipes.queue.QueueBuilder;
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.remote.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +102,7 @@ public class CuratorCommandExecutor implements CommandExecutor {
       log.info("Slot allocated " + response.getSlotInfo());
       return slot;
     } else {
-      log.info(response.getMessage());
-      return null;
+      throw new SessionNotCreatedException(response.getMessage());
     }
   }
 
